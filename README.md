@@ -27,5 +27,26 @@ $ bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --boo
 ### Auto Flight
 1. Run the command 
 ```
-python3 ./uav/app.py -f ./uav/commands/command.txt
+$ python3 ./uav/autoFlight/app.py -f ./uav/commands/command.txt
+```
+### Manual Flight
+This is the keys for controlling Tello Drone.
+| Keys      | Description | 
+| :---      |    :----:   |
+| ↑         | go forward       |
+| ↓         | go backward |
+| ← |  go left |
+| → | go right |
+| w  | go up |
+| a | turn counter-clockwise |
+| s | turn clockwise |
+| d | go down |
+| l | flip left |
+| r | flip right|
+| f | flip front| 
+| b | flip back |
+
+1. Run the drone 
+```
+$ python3 ./uav/manualFlight/app.py
 ```
