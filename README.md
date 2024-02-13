@@ -3,11 +3,11 @@
 ## Kafka Setup
 ### How to run Kafka with Kraft
 1. `cd ./kafka`
-2. `docker compose up`
+2. `docker compose up -d`
 
 ### How to create topic, write and read events in Kafka
 1. Open new terminal
-2. `cd ./kafka_2.13-3.6.1`
+2. `cd ~/kafka_2.13-3.6.1`
 3. Create Topic 
 ```
 $ bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092
