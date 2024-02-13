@@ -1,7 +1,16 @@
 # Multi UAV For Monitoring Disaster Area based on Fogverse
 
+## Update Submodules
+```
+git submodule init
+git submodule update
+```
+
 ## Install dependencies
-`pip install -r requirements.txt`
+```
+pip install -r requirements.txt
+pip install -r ./fogverse/requirements.txt
+```
 
 ## Kafka Setup
 ### How to run Kafka with Kraft
