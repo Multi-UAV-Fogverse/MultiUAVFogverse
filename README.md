@@ -6,10 +6,15 @@ git submodule init
 git submodule update
 ```
 
+## Activate virtual environment
+```
+python3 -m venv env
+source env/bin/activate
+```
+
 ## Install dependencies
 ```
 pip install -r requirements.txt
-pip install -r ./fogverse/requirements.txt
 ```
 
 ## Kafka Setup
