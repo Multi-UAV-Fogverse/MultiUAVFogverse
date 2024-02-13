@@ -1,5 +1,8 @@
 # Multi UAV For Monitoring Disaster Area based on Fogverse
 
+## Install dependencies
+`pip install -r requirements.txt`
+
 ## Kafka Setup
 ### How to run Kafka with Kraft
 1. `cd ./kafka`

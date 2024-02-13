@@ -1,0 +1,4 @@
+opencv-python==4.9.0.80
+pandas==2.2.0
+kafka-python==2.0.2
+djitellopy==2.5.0
