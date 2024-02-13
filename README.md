@@ -22,3 +22,10 @@ $ bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server loc
 ```
 $ bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092
 ```
+
+## DJI Tello
+### Auto Flight
+1. Run the command 
+```
+python3 ./uav/app.py -f ./uav/commands/command.txt
+```
