@@ -6,6 +6,7 @@
 import socket
 import threading
 import time
+from djitellopy import tello
 
 # IP and port of Tello
 tello1_address = ('192.168.0.102', 8889)

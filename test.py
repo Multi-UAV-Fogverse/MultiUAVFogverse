@@ -76,9 +76,9 @@ def yolo(drone):
                 thickness = 2
 
                 cv2.putText(img, classNames[cls] + "-" + str(confidence), org, font, fontScale, color, thickness)
-
-        cv2.imshow('Webcam', img)
-        if cv2.waitKey(10) == ord('q'):
+        data = cv2.resize(img ,(640, 480), interpolation=cv2.INTER_AREA)
+        cv2.imshow('Webcam', data)
+        if cv2.waitKey(1) == ord('q'):
             break
 
     cv2.destroyAllWindows()
