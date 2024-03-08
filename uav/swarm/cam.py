@@ -52,6 +52,7 @@ def stream_on(telloSwarm):
         for index, tello in enumerate(telloSwarm.tellos):
             tello_video_new = threading.Thread(target=tello_video, args=(tello, index+1), daemon=True)
             tello_video_new.start()
+            videoThreads.append(tello_video_new)
 
         time.sleep(3)
     
@@ -76,12 +77,7 @@ def stream_off(videoThreads, telloSwarm):
 def main():
     telloSwarm = setup()
     videoThreads = stream_on(telloSwarm)
-
-    if video:    
-        for tello_video in videoThreads:
-            tello_video.join()
-
-    telloSwarm.parallel(lambda drone, tello: tello.streamoff())
+    stream_off(videoThreads, telloSwarm)
     telloSwarm.end()
 
 
