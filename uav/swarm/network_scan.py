@@ -15,9 +15,9 @@ def ping(host):
 
     return subprocess.call(command, stdout=subprocess.DEVNULL) == 0
 
-def list_ip(droneNumber):
+def list_ip(droneTotal):
     ipAlive = []
-    for i in range(droneNumber+1):
+    for i in range(droneTotal+1):
         checkIp = "192.168.0.{}".format(str(100+i))
         if checkIp == "192.168.0.101":
             continue
@@ -25,6 +25,3 @@ def list_ip(droneNumber):
             ipAlive.append(checkIp)
     
     return ipAlive
-
-if __name__ == "__main__":
-    print(list_ip(2))

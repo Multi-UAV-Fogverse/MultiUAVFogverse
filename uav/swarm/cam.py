@@ -3,13 +3,16 @@ import cv2
 import threading
 import time, logging
 import asyncio
+from network_scan import list_ip
 
 fly = False
 video = True
 landed = False   
 
 def setup():
-    telloSwarm = TelloSwarm.fromIps(['192.168.0.100'])
+    droneTotal = 2
+    listIp = list_ip(droneTotal)
+    telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -33,7 +36,7 @@ def tello_video(tello, drone_number):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) 
         cv2.imshow(f'Tello {drone_number}' , frame)
         cv2.moveWindow(f'Tello {drone_number}', (drone_number - 1)*900, 50)
-        if cv2.waitKey(40) & 0xFF == ord('q'):
+        if cv2.waitKey(50) & 0xFF == ord('q'):
             cv2.destroyWindow(f'Tello {drone_number}')
             break
 
