@@ -1,28 +1,30 @@
-# A basic script to scan a local network for IP addresses to indentify Tello EDU drones
+import platform    # For getting the operating system name
+import subprocess  # For executing a shell command
 
-# Import modules
-import subprocess
-import ipaddress
-from subprocess import Popen, PIPE
+def ping(host):
+    """
+    Returns True if host (str) responds to a ping request.
+    Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
+    """
 
-# Create the network
-# The IP below is associated with the TP-Link wireless router
-# https://amzn.to/2TR1r56
-ip_net = ipaddress.ip_network(u'192.168.0.1/24', strict=False)
+    # Option for the number of packets as a function of
+    param = '-n' if platform.system().lower()=='windows' else '-c'
 
-# Loop through the connected hosts
-for ip in ip_net.hosts():
+    # Building the command. Ex: "ping -c 1 google.com"
+    command = ['ping', param, '1', host]
 
-    # Convert the ip to a string so it can be used in the ping method
-    ip = str(ip)
+    return subprocess.call(command, stdout=subprocess.DEVNULL) == 0
+
+def list_ip(droneNumber):
+    ipAlive = []
+    for i in range(droneNumber+1):
+        checkIp = "192.168.0.{}".format(str(100+i))
+        if checkIp == "192.168.0.101":
+            continue
+        if ping(checkIp):
+            ipAlive.append(checkIp)
     
-    # Let's ping the IP to see if it's online
-    toping = Popen(['ping', '-c', '1', '-W', '50', ip], stdout=PIPE)
-    output = toping.communicate()[0]
-    hostalive = toping.returncode
-    
-    # Print whether or not device is online
-    if hostalive ==0:
-        print(ip, "is online")
-    else:
-        print(ip, "is offline")
+    return ipAlive
+
+if __name__ == "__main__":
+    print(list_ip(2))
