@@ -4,8 +4,9 @@ from threading import Thread, Event
 import time, logging
 import asyncio
 from network_scan import list_ip
-from fogverse import Producer, AbstractConsumer, ConsumerStorage
+from fogverse import Producer, Profiling, Consumer, OpenCVConsumer, Manager
 import uuid
+from datetime import datetime
 
 from io import BytesIO
 from PIL import Image
@@ -15,78 +16,62 @@ video = True
 landed = False
 droneTotal = 1
 
+class MyFrameProducer(OpenCVConsumer, Producer):
+    def __init__(self, loop=None, shutdown_callback=None):
+        self.loop = loop or asyncio.get_event_loop()
+        self.cam_id = 1
+        self.producer_topic = 'input_1'
+        self.auto_decode = False
+        self.frame_idx = 1
+        self.encode_encoding = 'jpg'
+        self.device = str(VID) 
+        self.shutdown_callback = shutdown_callback
 
-vid = cv2.VideoCapture()
+        OpenCVConsumer.__init__(self,loop=loop,executor=None)
+        Producer.__init__(self,loop=loop)
 
-# class UAV(Producer, Consumer):
-#     def __init__(self, loop=None):
-#         self.consumer_servers = '127.0.0.1'
-#         self.producer_servers = '127.0.0.1'
-#         self.consumer_topic = [f'quickstart-events']
-#         self.producer_topic = f'quickstart-results'
-#         Producer.__init__(self)
-#         Consumer.__init__(self)
-    
-#     def process(self, data):
-#         return data[::-1]
+    async def receive_error(self, *args, **kwargs):
+        self._log.std_log('At the last frame')
+        if callable(self.shutdown_callback):
+            await self.shutdown_callback()
+        return await super().receive_error(*args, **kwargs)
 
-class UAVFrameConsumer(AbstractConsumer):
-  def __init__(self, loop=None, executor=None):
-    self._loop = loop or asyncio.get_event_loop()
-    self._executor = executor
-    self.auto_decode = False
-        
-  def start_consumer(self):
-    self.event = Event()
-    # Thread(target=battery_consumption_logger, args=(self.event,)).start()
-    # self.consumer.connect()
-    # Thread(target=uav_controller, args=(self.consumer, )).start()
-    self.consumer.streamon()
-    self.frame_reader = self.consumer.get_frame_read()
+    async def send(self, data):
+        key = str(self.frame_idx).encode()
+        headers = [
+            ('cam', self.cam_id.encode()),
+            ('frame', str(self.frame_idx).encode()),
+            ('timestamp', datetime.now().encode())]
+        await super().send(data, key=key, headers=headers)
+        self.frame_idx += 1
 
-  def _receive(self):
-    return self.frame_reader.frame
+class MyResultStorage(Profiling, Consumer):
+    def __init__(self, loop=None):
+        self.consumer_topic = [f'result_{SCHEME}']
+        self.auto_encode = False
+        self.group_id = f'group-{SCHEME}'
 
-  async def receive(self):
-    return await self._loop.run_in_executor(self._executor, self._receive)
-  
-  def process(self, data):
-    cv2.imshow("Image from UAV", data)
-    cv2.waitKey(1)
-    return data
+        self.vid_cap = cv2.VideoWriter(
+                            f'results/{VID.stem}-result{VID.suffix}',
+                            cv2.VideoWriter_fourcc(*'mp4v'),
+                            OUT_FRAMERATE, (1920,1080))
 
-  def close_consumer(self):
-    self.event.set()
-    self.consumer.streamoff()
-    self.consumer.end()
+        self.extra_remote_data = {'app_id': SCHEME}
+        self.profiling_name = f'{self.__class__.__name__}_{SCHEME}'
+        Profiling.__init__(self, name=self.profiling_name, dirname=CSV_DIR,
+                           remote_logging=True, app_id=SCHEME)
+        Consumer.__init__(self,loop=loop)
 
-class UAVFrameProducerStorage(UAVFrameConsumer, ConsumerStorage):
-  def __init__(self):
-    # self.frame_size = (640, 480)
-    UAVFrameConsumer.__init__(self)
-    ConsumerStorage.__init__(self)
-  
-  def process(self, data):
-    data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB) 
-    data = super().process(data)
-    return data
+    async def _send(self, data, *args, **kwargs):
+        def __send(data):
+            self.vid_cap.write(data)
+        return await self._loop.run_in_executor(None, __send,
+                                                data)
 
-class UAVFrameProducer(Producer):
-  def __init__(self, consumer, loop=None):
-    self.consumer = consumer
- 
-    self.frame_idx = 1
-    Producer.__init__(self, loop=loop)
-
-  async def receive(self):
-    return await self.consumer.get()
-
-  def encode(self, data):
-    buffer = BytesIO()
-    image = Image.fromarray(data)
-    image.save(buffer, format="JPEG", quality=30)
-    buffer.seek(0)
-    return buffer.getvalue()
+    async def _close(self):
+        self._log.std_log('Video cap released.')
+        self.vid_cap.release()
+        await super()._close()
 
 def setup():
     listIp = list_ip(droneTotal)
@@ -169,14 +154,8 @@ async def main():
 
     tasks = []
     for index, tello in enumerate(telloSwarm):
-        consumer = UAVFrameProducerStorage()
-        setattr(consumer, 'consumer', tello)
-        setattr(consumer, 'consumer_servers', '127.0.0.1')
-        setattr(consumer, 'consumer_topic', 'quickstart-events')
-        producer = UAVFrameProducer(consumer=consumer)
-        setattr(producer, 'uav_id', index+1)
-        setattr(producer, 'consumer_servers', '127.0.0.1')
-        setattr(producer, 'producer_topic', 'quickstart-results')
+        consumer = UAVFrameProducerStorage(tello=tello)
+        producer = UAVFrameProducer(consumer=consumer, id=index+1)
         tasks.append(consumer.run())
         tasks.append(producer.run())
     try:

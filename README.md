@@ -6,6 +6,11 @@ git submodule init
 git submodule update
 ```
 
+## Setup Fogverse submodule
+```
+python setup.py develop
+```
+
 ## Activate virtual environment
 ```
 python3 -m venv env

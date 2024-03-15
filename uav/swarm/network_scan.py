@@ -19,7 +19,8 @@ def list_ip(droneTotal):
     ipAlive = []
     for i in range(droneTotal+1):
         checkIp = "192.168.0.{}".format(str(100+i))
-        if checkIp == "192.168.0.101":
+        if checkIp == "192.168.0.100":
+            i -= 1
             continue
         if ping(checkIp):
             ipAlive.append(checkIp)
