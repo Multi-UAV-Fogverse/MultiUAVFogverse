@@ -18,18 +18,6 @@ droneTotal = 1
 
 vid = cv2.VideoCapture()
 
-# class UAV(Producer, Consumer):
-#     def __init__(self, loop=None):
-#         self.consumer_servers = '127.0.0.1'
-#         self.producer_servers = '127.0.0.1'
-#         self.consumer_topic = [f'quickstart-events']
-#         self.producer_topic = f'quickstart-results'
-#         Producer.__init__(self)
-#         Consumer.__init__(self)
-    
-#     def process(self, data):
-#         return data[::-1]
-
 class UAVFrameConsumer(AbstractConsumer):
   def __init__(self, loop=None, executor=None):
     self._loop = loop or asyncio.get_event_loop()
@@ -51,8 +39,8 @@ class UAVFrameConsumer(AbstractConsumer):
     return await self._loop.run_in_executor(self._executor, self._receive)
   
   def process(self, data):
-    cv2.imshow("Image from UAV", data)
-    cv2.waitKey(1)
+    # cv2.imshow("Image from UAV", data)
+    # cv2.waitKey(1)
     return data
 
   def close_consumer(self):
