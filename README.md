@@ -14,7 +14,7 @@ python setup.py develop
 ## Activate virtual environment
 ```
 python3 -m venv env
-source env/bin/activate
+source env/bin/activate or .\env\Scripts\activate
 ```
 
 ## Install dependencies

@@ -160,11 +160,11 @@ async def main():
         consumer = UAVFrameProducerStorage()
         setattr(consumer, 'consumer', tello)
         setattr(consumer, 'consumer_servers', '127.0.0.1')
-        setattr(consumer, 'consumer_topic', 'quickstart-events')
+        setattr(consumer, 'consumer_topic', 'input')
         producer = UAVFrameProducer(consumer=consumer)
         setattr(producer, 'uav_id', index+1)
         setattr(producer, 'consumer_servers', '127.0.0.1')
-        setattr(producer, 'producer_topic', 'quickstart-results')
+        setattr(producer, 'producer_topic', 'input')
         tasks.append(consumer.run())
         tasks.append(producer.run())
     try:

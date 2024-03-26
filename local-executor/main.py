@@ -113,7 +113,7 @@ class LocalExecutor1(LocalExecutor):
 
 async def main():
     consumer = LocalExecutorStorage()
-    producer = LocalExecutor1()
+    producer = LocalExecutor1(consumer)
     tasks = [consumer.run(), producer.run()]
     try:
         await asyncio.gather(*tasks)
