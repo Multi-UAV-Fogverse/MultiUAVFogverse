@@ -1,0 +1,7 @@
+opencv-python
+asyncio
+djitellopy
+numpy==1.21.5
+aiokafka==0.7.2
+confluent-kafka==2.3.0
+PyYAML==6.0.1
