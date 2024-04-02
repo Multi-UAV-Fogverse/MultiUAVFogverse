@@ -16,16 +16,19 @@ from io import BytesIO
 import numpy as np
 
 class LocalExecutorStorage(Consumer, ConsumerStorage):
-    def __init__(self, keep_messages=False):
+    def __init__(self, consumer_topic: str, consumer_server: str, keep_messages=False):
+        self._consumer_servers = consumer_server
+        self._consumer_topic = consumer_topic
+
         Consumer.__init__(self)
         ConsumerStorage.__init__(self, keep_messages=keep_messages)
 
 class LocalExecutor(Producer):
-    def __init__(self, consumer):
+    def __init__(self, consumer, loop=None):
         self.model = YOLO("yolo-Weights/yolov8n.pt")
         self.model.classes = [0]
         self.consumer = consumer
-        # CsvLogging.__init__(self)
+        
         Producer.__init__(self)
 
     async def receive(self):
@@ -100,7 +103,9 @@ class LocalExecutor(Producer):
 
 # ======================================================================
 class LocalExecutor1(LocalExecutor):
-    def __init__(self, consumer):
+    def __init__(self, consumer, producer_topic: str, producer_server: str):
+        self._producer_servers = producer_server
+        self.producer_topic = producer_topic
         super().__init__(consumer)
 
     async def send(self, data):
@@ -108,12 +113,11 @@ class LocalExecutor1(LocalExecutor):
         uav_id = get_header(headers, 'cam')
         headers.append(('from',b'local-executor'))
         self.message.headers = headers
-        self.producer_topic = f'final_{uav_id}'
         await super().send(data)
 
 async def main():
-    consumer = LocalExecutorStorage()
-    producer = LocalExecutor1(consumer)
+    consumer = LocalExecutorStorage('input', 'localhost')
+    producer = LocalExecutor1(consumer, 'final_uav_1', 'localhost')
     tasks = [consumer.run(), producer.run()]
     try:
         await asyncio.gather(*tasks)

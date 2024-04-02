@@ -22,6 +22,12 @@ source env/bin/activate or .\env\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Docker
+### Docker Build UAV
+```
+docker build -f .\uav\swarm\Dockerfile -t uav-input:latest .
+```
+
 ## Kafka Setup
 ### How to run Kafka with Kraft
 1. `cd ./kafka`

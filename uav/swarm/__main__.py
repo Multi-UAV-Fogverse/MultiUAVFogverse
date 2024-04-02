@@ -39,13 +39,12 @@ class UAVConsumerProducer(Producer):
 
         self.consumer = uav
         self.uav_id = uav_id
-        self.producer_topic = 'input'
-        self.producer_servers = '127.0.0.1'
-        self.consumer_servers = producer_server
+        self.producer_topic = producer_topic
+        self.producer_servers = producer_server
         self.consumer.streamon()
         
         Producer.__init__(self)
-        
+
     async def receive(self):
         self.frame_reader = self.consumer.get_frame_read()
         return self.frame_reader.frame
@@ -69,7 +68,7 @@ async def main():
 
     tasks = []
     for index, tello in enumerate(telloSwarm):
-        consumerProducer = UAVConsumerProducer(tello, index+1, "input", "127.0.0.1")
+        consumerProducer = UAVConsumerProducer(tello, index+1, "input", "localhost")
         tasks.append(consumerProducer.run())
 
     try:
