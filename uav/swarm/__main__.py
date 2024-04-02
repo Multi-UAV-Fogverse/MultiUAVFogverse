@@ -36,20 +36,19 @@ def setup(total):
 
 class UAVConsumerProducer(Producer):
     def __init__(self, uav: Tello, uav_id: str, producer_topic: str, producer_server: str,loop=None):
-        Producer.__init__(self)
-        Consumer.__init__(self)
 
         self.consumer = uav
         self.uav_id = uav_id
-        self.producer_topic = producer_topic
-        self.producer_servers = producer_server
-    
+        self.producer_topic = 'input'
+        self.producer_servers = '127.0.0.1'
+        self.consumer_servers = producer_server
+        self.consumer.streamon()
+        
+        Producer.__init__(self)
+        
     async def receive(self):
         self.frame_reader = self.consumer.get_frame_read()
         return self.frame_reader.frame
-
-    def start_consumer(self):
-        self.consumer.streamon()
     
     async def process(self, data):
         cv2.imshow("Image from UAV", data)
@@ -70,7 +69,7 @@ async def main():
 
     tasks = []
     for index, tello in enumerate(telloSwarm):
-        consumerProducer = UAVConsumerProducer(tello, index+1, "input", "localhost:9092")
+        consumerProducer = UAVConsumerProducer(tello, index+1, "input", "127.0.0.1")
         tasks.append(consumerProducer.run())
 
     try:
