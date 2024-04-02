@@ -78,7 +78,7 @@ class UAVFrameProducer(Producer):
 
 def setup():
     listIp = list_ip(droneTotal)
-    telloSwarm = TelloSwarm.fromIps(['192.168.0.102'])
+    telloSwarm = TelloSwarm.fromIps(['192.168.0.101'])
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY

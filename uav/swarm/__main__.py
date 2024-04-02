@@ -3,7 +3,6 @@ import cv2
 from threading import Thread, Event
 import time, logging
 import asyncio
-from .network_scan import list_ip
 from fogverse import Producer, AbstractConsumer, ConsumerStorage, Consumer
 import uuid
 
@@ -17,7 +16,7 @@ droneTotal = 1
 
 def setup(total):
     # listIp = list_ip(total)
-    telloSwarm = TelloSwarm.fromIps(['192.168.0.102'])
+    telloSwarm = TelloSwarm.fromIps(['192.168.0.101'])
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -36,13 +35,12 @@ def setup(total):
     return telloSwarm
 
 class UAVConsumerProducer(Producer):
-    def __init__(self, uav: Tello, uav_id: str, producer_topic: str, consumer_server: str, producer_server: str,loop=None):
+    def __init__(self, uav: Tello, uav_id: str, producer_topic: str, producer_server: str,loop=None):
         Producer.__init__(self)
         Consumer.__init__(self)
 
         self.consumer = uav
         self.uav_id = uav_id
-        self.consumer_servers = consumer_server
         self.producer_topic = producer_topic
         self.producer_servers = producer_server
     
@@ -72,7 +70,7 @@ async def main():
 
     tasks = []
     for index, tello in enumerate(telloSwarm):
-        consumerProducer = UAVConsumerProducer(tello, index+1, "input", "127.0.0.1", "127.0.0.1")
+        consumerProducer = UAVConsumerProducer(tello, index+1, "input", "localhost:9092")
         tasks.append(consumerProducer.run())
 
     try:
