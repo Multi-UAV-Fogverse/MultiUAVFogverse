@@ -16,7 +16,7 @@ droneTotal = 1
 
 def setup(total):
     # listIp = list_ip(total)
-    telloSwarm = TelloSwarm.fromIps(['192.168.0.101'])
+    telloSwarm = TelloSwarm.fromIps(['192.168.0.100'])
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -50,8 +50,6 @@ class UAVConsumerProducer(Producer):
         return self.frame_reader.frame
     
     async def process(self, data):
-        cv2.imshow("Image from UAV", data)
-        cv2.waitKey(1)
         return data
     
     async def close_consumer(self):
