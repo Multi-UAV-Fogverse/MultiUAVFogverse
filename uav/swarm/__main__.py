@@ -3,7 +3,7 @@ import cv2
 from threading import Thread, Event
 import time, logging
 import asyncio
-from fogverse import Producer, AbstractConsumer, ConsumerStorage, Consumer
+from fogverse import Producer, Profiling
 import uuid
 
 from io import BytesIO
@@ -16,7 +16,7 @@ droneTotal = 1
 
 def setup(total):
     # listIp = list_ip(total)
-    telloSwarm = TelloSwarm.fromIps(['192.168.0.100'])
+    telloSwarm = TelloSwarm.fromIps(['192.168.0.101'])
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -34,7 +34,7 @@ def setup(total):
 
     return telloSwarm
 
-class UAVConsumerProducer(Producer):
+class UAVConsumerProducer(Producer, Profiling):
     def __init__(self, uav: Tello, uav_id: str, producer_topic: str, producer_server: str,loop=None):
 
         self.consumer = uav
@@ -44,13 +44,26 @@ class UAVConsumerProducer(Producer):
         self.consumer.streamon()
         
         Producer.__init__(self)
+        Profiling.__init__(self, name="input", dirname="input-logs")
+
 
     async def receive(self):
         self.frame_reader = self.consumer.get_frame_read()
         return self.frame_reader.frame
     
     async def process(self, data):
+        # print(cv2.imread(data).shape)
+        # cv2.imshow("Image from UAV", data)
+        # cv2.waitKey(1)
         return data
+    
+    def encode(self, data):
+        buffer = BytesIO()
+        image = Image.fromarray(data)
+        image.save(buffer, format="JPEG", quality=30)
+        buffer.seek(0)
+        # print(buffer.getbuffer().nbytes)
+        return buffer.getvalue()
     
     async def close_consumer(self):
         self.consumer.streamoff()

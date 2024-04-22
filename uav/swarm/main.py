@@ -74,7 +74,7 @@ class UAVFrameProducer(Producer):
     image = Image.fromarray(data)
     image.save(buffer, format="JPEG", quality=30)
     buffer.seek(0)
-    return buffer.getvalue()
+    return image
 
 def setup():
     listIp = list_ip(droneTotal)

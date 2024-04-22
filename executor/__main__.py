@@ -1,4 +1,4 @@
-from fogverse import Producer, Consumer
+from fogverse import Producer, Consumer, Profiling
 import asyncio
 import time
 from ultralytics import YOLO
@@ -10,13 +10,14 @@ from PIL import Image
 from io import BytesIO
 import numpy as np
 
-class LocalExecutor(Consumer, Producer):
+class LocalExecutor(Consumer, Producer, Profiling):
     def __init__(self, consumer_topic:str, consumer_servers:str, producer_topic:str, producer_servers:str, loop=None):
         self.consumer_topic = consumer_topic
         self.consumer_servers = consumer_servers
         self.producer_topic = producer_topic
         self.producer_servers = producer_servers
 
+        Profiling.__init__(self, name="executor", dirname="executor-logs")
         Consumer.__init__(self)
         Producer.__init__(self)
     
@@ -25,7 +26,7 @@ class LocalExecutor(Consumer, Producer):
         self.model = YOLO("yolo-Weights/yolov8n.pt")
 
 
-    def _process(self, data):
+    def _process(self, bbytes):
         # start_time = time.time()
         # results = self.model(data, stream=True)
         # frame = self.apply_bounding_box(results, data)
@@ -33,11 +34,12 @@ class LocalExecutor(Consumer, Producer):
         # fps = 1/np.round(end_time - start_time, 2)
              
         # cv2.putText(data, f'FPS: {int(fps)}', (20,70), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2)
-            
-        cv2.imshow('YOLOv8 Detection', data)
-        cv2.waitKey(1)
+        buffer = BytesIO(bbytes)
+        print(buffer.getbuffer().nbytes)
+        compressed_image = Image.open(buffer)
+        data = np.array(compressed_image)
         return data
-
+    
     async def process(self, data):
         return await self._loop.run_in_executor(None,
                                                self._process,
