@@ -1,0 +1,1 @@
+asctime,name,topic from,topic to,frame,offset received,frame delay (ms),msg creation delay (ms),consume time (ms),size data received (KB),decode time (ms),size data decoded (KB),process time (ms),size data processed (KB),encode time (ms),size data encoded (KB),send time (ms),size data sent (KB),offset sent
