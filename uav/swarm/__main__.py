@@ -87,7 +87,7 @@ class UAVFrameProducer(Producer):
 
 def setup():
     listIp = list_ip(droneTotal)
-    telloSwarm = TelloSwarm.fromIps(['192.168.0.101'])
+    telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -105,60 +105,6 @@ def setup():
 
     return telloSwarm
 
-def tello_video(tello, drone_number):
-    # Record the start time
-    start_time = time.time()
-    countFrame = 0.1
-    while not landed:  
-        frame = tello.get_frame_read().frame
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) 
-        cv2.imshow(f'Tello {drone_number}' , frame)
-        cv2.moveWindow(f'Tello {drone_number}', (drone_number - 1)*900, 50)
-        countFrame += 1
-        if cv2.waitKey(40) & 0xFF == ord('q'):
-            cv2.destroyWindow(f'Tello {drone_number}')
-            end_time = time.time()
-            time_elapsed = int(end_time-start_time)
-            print(countFrame/time_elapsed)
-            break
-
-def tello_flip(tello, direction):
-    tello.flip(direction)
-    
-def tello_mpad(tello, x, y, z, speed, mpad):
-    tello.enable_mission_pads
-    tello.go_xyz_speed_mid(x, y, z, speed, mpad)
-
-def stream_on(telloSwarm):
-    telloSwarm.parallel(lambda drone, tello: tello.streamon())
-
-    videoThreads = []
-    if video:
-        for index, tello in enumerate(telloSwarm.tellos):
-            tello_video_new = threading.Thread(target=tello_video, args=(tello, index+1), daemon=True)
-            tello_video_new.start()
-            videoThreads.append(tello_video_new)
-
-        time.sleep(3)
-    
-    return videoThreads
-
-def fly(telloSwarm):
-    telloSwarm.send_rc_control(0,0,0,0)
-    telloSwarm.takeoff()
-   
-    telloSwarm.land()
-    landed = True
-
-def stream_off(videoThreads, telloSwarm):
-    if video:    
-        for tello_video in videoThreads:
-            tello_video.join()
-
-    telloSwarm.parallel(lambda drone, tello: tello.streamoff())
-
-
-
 async def main():
     telloSwarm = setup()
     # videoThreads = stream_on(telloSwarm)
@@ -166,10 +112,11 @@ async def main():
 
     tasks = []
     for index, tello in enumerate(telloSwarm):
+        prod_topic = 'input_' + str(index)
+
         consumer = UAVFrameProducerStorage()
         setattr(consumer, 'consumer', tello)
-        producer = UAVFrameProducer(consumer=consumer, producer_topic='input', producer_server='localhost')
-        setattr(producer, 'uav_id', index+1)
+        producer = UAVFrameProducer(consumer=consumer, producer_topic=prod_topic, producer_server='localhost')
         tasks.append(consumer.run())
         tasks.append(producer.run())
     try:

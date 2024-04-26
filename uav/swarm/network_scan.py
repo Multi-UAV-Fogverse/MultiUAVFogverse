@@ -1,28 +1,16 @@
-import platform    # For getting the operating system name
-import subprocess  # For executing a shell command
+from who_is_on_my_wifi import *
 
-def ping(host):
-    """
-    Returns True if host (str) responds to a ping request.
-    Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
-    """
-
-    # Option for the number of packets as a function of
-    param = '-n' if platform.system().lower()=='windows' else '-c'
-
-    # Building the command. Ex: "ping -c 1 google.com"
-    command = ['ping', param, '1', host]
-
-    return subprocess.call(command, stdout=subprocess.DEVNULL) == 0
-
-def list_ip(droneTotal):
-    ipAlive = []
-    for i in range(droneTotal+1):
-        checkIp = "192.168.0.{}".format(str(100+i))
-        if checkIp == "192.168.0.100":
-            i -= 1
+# this code is for TP-Link router only because different router have different ip
+def list_ip():
+    ipTello = []
+    notTello = ["192.168.0.100", "192.168.0.1"]
+    WHO = who() # who(n)
+    print("--------------------------Getting tello connected devices--------------------------")
+    for j in range(0, len(WHO)):
+        connectedIP = f"{WHO[j][1]}"
+        checkDevice = f"{WHO[j][0]} {WHO[j][1]} {WHO[j][4]} {WHO[j][5]}"
+        print(checkDevice)
+        if connectedIP in notTello:
             continue
-        if ping(checkIp):
-            ipAlive.append(checkIp)
-    
-    return ipAlive
+        ipTello.append(connectedIP) 
+    return ipTello

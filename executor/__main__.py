@@ -56,43 +56,6 @@ class LocalExecutor(Producer):
     def encode(self, img):
         return numpy_to_base64_url(img, os.getenv('ENCODING', 'jpg')).encode()
     
-    def apply_bounding_box(self, results, frame):
-        xyxys = []
-        confidences = []
-        class_ids = []
-        
-         # Extract detections for person class
-        for result in results:
-            boxes = result.boxes.cpu().numpy()
-            class_id = boxes.cls[0]
-            conf = boxes.conf[0]
-            xyxy = boxes.xyxy[0]
-
-            if class_id == 0.0:
-          
-              xyxys.append(result.boxes.xyxy.cpu().numpy())
-              confidences.append(result.boxes.conf.cpu().numpy())
-              class_ids.append(result.boxes.cls.cpu().numpy().astype(int))
-            
-        
-        # Setup detections for visualization
-        detections = sv.Detections(
-                    xyxy=results[0].boxes.xyxy.cpu().numpy(),
-                    confidence=results[0].boxes.conf.cpu().numpy(),
-                    class_id=results[0].boxes.cls.cpu().numpy().astype(int),
-                    )
-        
-    
-        # Format custom labels
-        self.labels = [f"{self.CLASS_NAMES_DICT[class_id]} {confidence:0.2f}"
-        for _, confidence, class_id, tracker_id
-        in detections]
-        
-        # Annotate and display frame
-        frame = self.box_annotator.annotate(scene=frame, detections=detections, labels=self.labels)
-        
-        return frame
-    
     async def send(self, data):
         headers = list(self.message.headers)
         headers.append(('type',b'final'))
