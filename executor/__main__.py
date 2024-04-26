@@ -16,6 +16,7 @@ from io import BytesIO
 import numpy as np
 
 CSV_DIR = "executor-logs"
+TOTAL_UAV = 2
 
 class LocalExecutorStorage(Consumer, ConsumerStorage):
     def __init__(self, consumer_topic: str, consumer_server: str, keep_messages=False, loop=None):
@@ -43,8 +44,8 @@ class LocalExecutor(Producer):
         buffer = BytesIO(bbytes)
         compressed_image = Image.open(buffer)
         data = np.array(compressed_image)
-            
-        cv2.imshow('YOLOv8 Detection', data)
+
+        cv2.imshow(self.producer_topic, data)
         cv2.waitKey(1)
         return data
 
@@ -76,9 +77,14 @@ class LocalExecutor1(LocalExecutor):
         await super().send(data)
 
 async def main():
-    consumer = LocalExecutorStorage('input', 'localhost')
-    producer = LocalExecutor1(consumer, 'final_uav_1', 'localhost')
-    tasks = [consumer.run(), producer.run()]
+    tasks = []
+    for i in range(TOTAL_UAV):    
+        cons_topic = 'input_' + str(i+1)
+        prod_topic = 'final_uav_' + str(i+1)
+        consumer = LocalExecutorStorage(cons_topic, 'localhost')
+        producer = LocalExecutor1(consumer, prod_topic, 'localhost')
+        tasks.append(consumer.run())
+        tasks.append(producer.run())
     try:
         await asyncio.gather(*tasks)
     finally:

@@ -11,11 +11,6 @@ import uuid
 from io import BytesIO
 from PIL import Image
 
-fly = False
-video = True
-landed = False
-droneTotal = 1
-
 CSV_DIR = "input-logs"
 
 vid = cv2.VideoCapture()
@@ -86,7 +81,7 @@ class UAVFrameProducer(Producer):
     return buffer.getvalue()
 
 def setup():
-    listIp = list_ip(droneTotal)
+    listIp = list_ip()
     telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
@@ -112,7 +107,7 @@ async def main():
 
     tasks = []
     for index, tello in enumerate(telloSwarm):
-        prod_topic = 'input_' + str(index)
+        prod_topic = 'input_' + str(index+1)
 
         consumer = UAVFrameProducerStorage()
         setattr(consumer, 'consumer', tello)
