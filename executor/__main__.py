@@ -72,7 +72,7 @@ class LocalExecutor1(LocalExecutor):
     async def send(self, data):
         headers = list(self.message.headers)
         uav_id = get_header(headers, 'cam')
-        headers.append(('from',b'local-executor'))
+        headers.append(('from',b'executor'))
         self.message.headers = headers
         await super().send(data)
 

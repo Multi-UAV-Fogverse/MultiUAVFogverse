@@ -1,64 +1,51 @@
-import asyncio
-import threading
-import uuid
-import os
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
 
-from fogverse import Consumer
-from flask import Flask, render_template
-from flask_socketio import SocketIO
-from dotenv import load_dotenv
+app = FastAPI()
 
-from fogverse.logging import CsvLogging
+html = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket("ws://localhost:8000/ws");
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message)
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+                input.value = ''
+                event.preventDefault()
+            }
+        </script>
+    </body>
+</html>
+"""
 
-def page_not_found(*args):
-  return render_template('404.html'), 404
 
-app = Flask(__name__)
-app.register_error_handler(404, page_not_found)
-socketio = SocketIO(app)
+@app.get("/")
+async def get():
+    return HTMLResponse(html)
 
-class Client(CsvLogging, Consumer):
-    def __init__(self, socket: SocketIO, loop=None):
-        self.socket = socket
-        self.auto_encode = False
-        self.consumer_conf = {'group_id': str(uuid.uuid4())}
-        self.topic_pattern = os.getenv('TOPIC_PATTERN')
-        CsvLogging.__init__(self)
-        Consumer.__init__(self,loop=loop)
 
-    async def send(self, data):
-        headers = self.message.headers
-        headers = {key: value.decode() for key, value in headers}
-        data = {
-            'src': data,
-            'headers': headers,
-        }
-        self.socket.emit(self.message.topic, data)
-
-@app.route('/<uav_id>/')
-def index(uav_id=None):
-    if not uav_id:
-        return page_not_found()
-    return render_template('index.html')
-
-async def main(loop):
-    consumer = Client(socketio, loop=loop)
-    tasks = [consumer.run()]
-    try:
-        await asyncio.gather(*tasks)
-    finally:
-        for t in tasks:
-            t.close()
-
-def run_consumer(loop):
-    try:
-        loop.run_until_complete(main(loop))
-    finally:
-        loop.close()
-
-if __name__ == '__main__':
-    load_dotenv()
-    loop = asyncio.new_event_loop()
-    thread = threading.Thread(target=run_consumer, args=(loop,))
-    thread.start()
-    socketio.run(app, debug=True, host='0.0.0.0', use_reloader=False)
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data}")
