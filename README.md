@@ -28,6 +28,12 @@ pip install -r requirements.txt
 docker build -f .\uav\swarm\Dockerfile -t uav-input:latest .
 ```
 
+### Docker Build Client
+```
+docker-compose -f ./client/docker-compose.yml up -d
+```
+
+
 ## Kafka Setup
 ### How to run Kafka with Kraft
 1. `cd ./kafka`
