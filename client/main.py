@@ -3,6 +3,11 @@ import uuid
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
 from fogverse import Consumer
+from dotenv import load_dotenv
+import uvicorn
+import asyncio
+import threading
+
 
 app = FastAPI()
 
@@ -34,8 +39,9 @@ class Client(Consumer):
     def __init__(self, socket: WebSocket, loop=None):
         self.socket = socket
         self.auto_encode = False
-        self.consumer_conf = {'group_id': str(uuid.uuid4())}
-        self.topic_pattern = os.getenv('TOPIC_PATTERN')
+        self.consumer_topic = "final_uav_1"
+        # self.consumer_conf = {'group_id': str(uuid.uuid4())}
+        # self.topic_pattern = os.getenv('TOPIC_PATTERN')
         Consumer.__init__(self,loop=loop)
 
     async def send(self, data):
@@ -55,6 +61,15 @@ async def get():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        data = await websocket.receive()
-        await websocket.send(data)
+    consumer = Client(websocket)  # Create a Client instance with the WebSocket object
+    await consumer.run()  # Run the Client
+    try:
+        while True:
+            data = await websocket.receive()
+            await websocket.send(data)
+    finally:
+        # Clean up
+        consumer._close()
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="localhost", port=8000)

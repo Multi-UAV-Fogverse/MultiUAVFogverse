@@ -33,6 +33,10 @@ docker build -f .\uav\swarm\Dockerfile -t uav-input:latest .
 docker-compose -f ./client/docker-compose.yml up -d
 ```
 
+### Docker Build KafkaUI
+```
+docker run -it -p 8080:8080 -e DYNAMIC_CONFIG_ENABLED=true provectuslabs/kafka-ui
+```
 
 ## Kafka Setup
 ### How to run Kafka with Kraft
