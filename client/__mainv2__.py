@@ -61,30 +61,28 @@ async def websocket_endpoint(websocket: WebSocket):
 
     # Create new event loop and consumer
     loop = asyncio.new_event_loop()
-    consumer = Client(websocket, loop=loop)
-    thread = threading.Thread(target=run_consumer, args=(websocket, loop, consumer))
+    thread = threading.Thread(target=run_consumer, args=(websocket, loop))
     thread.start()
 
     try:
         while True:
             data = await websocket.receive_bytes()
-            print("here")
             await websocket.send(data)
     except WebSocketDisconnect:
             print("WebSocket disconnected")
 
-# async def main(websocket, loop):
-#     consumer = Client(websocket, loop=loop)
-#     tasks = [consumer.run()]
-#     try:
-#         await asyncio.gather(*tasks)
-#     finally:
-#         for t in tasks:
-#             t.close()
-
-def run_consumer(websocket: WebSocket, loop, consumer):
+async def main(websocket, loop):
+    consumer = Client(websocket, loop=loop)
+    tasks = [consumer.run()]
     try:
-        loop.run_until_complete(consumer.run())
+        await asyncio.gather(*tasks)
+    finally:
+        for t in tasks:
+            t.close()
+
+def run_consumer(websocket: WebSocket, loop):
+    try:
+        loop.run_until_complete(main(websocket, loop))
     finally:
         loop.close()
 

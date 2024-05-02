@@ -8,8 +8,6 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 
-from fogverse.logging import CsvLogging
-
 def page_not_found(*args):
   return render_template('404.html'), 404
 
@@ -17,13 +15,13 @@ app = Flask(__name__)
 app.register_error_handler(404, page_not_found)
 socketio = SocketIO(app)
 
-class Client(CsvLogging, Consumer):
+class Client(Consumer):
     def __init__(self, socket: SocketIO, loop=None):
         self.socket = socket
         self.auto_encode = False
         self.consumer_conf = {'group_id': str(uuid.uuid4())}
-        self.topic_pattern = os.getenv('TOPIC_PATTERN')
-        CsvLogging.__init__(self)
+        self.topic_pattern = "^final_uav_[0-9a-zA-Z-]+$"
+        # self.consumer_topic = "final_uav_1"
         Consumer.__init__(self,loop=loop)
 
     async def send(self, data):

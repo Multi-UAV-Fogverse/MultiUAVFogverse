@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+      integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+      crossorigin="anonymous"
+    />
+    <title>FogVerse Client</title>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+          <h3 class="mt-5">Live Streaming</h3>
+          <table>
+            <tr id="uav">
+              <td>Uav:</td>
+              <td></td>
+            </tr>
+            <tr id="frame">
+              <td>Frame:</td>
+              <td></td>
+            </tr>
+            <tr id="from">
+              <td>From:</td>
+              <td></td>
+            </tr>
+            <tr id="timestamp-created">
+              <td>Timestamp Created (UTC):</td>
+              <td></td>
+            </tr>
+            <tr id="timestamp-now">
+              <td>Timestamp Now:</td>
+              <td></td>
+            </tr>
+            <tr id="delay">
+              <td>Delay:</td>
+              <td></td>
+            </tr>
+            <tr id="framerate">
+              <td>framerate:</td>
+              <td></td>
+            </tr>
+          </table>
+          <img id="img-feed" src="#" width="100%" />
+        </div>
+      </div>
+    </div>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+      integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+      integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/javascript" charset="utf-8">
+      const imgFeed = $("#img-feed");
+      const uavVal = $("tr#uav td:nth-child(2)");
+      const frameVal = $("tr#frame td:nth-child(2)");
+      const fromVal = $("tr#from td:nth-child(2)");
+      const tsCreatedVal = $("tr#timestamp-created td:nth-child(2)");
+      const tsNowVal = $("tr#timestamp-now td:nth-child(2)");
+      const delayVal = $("tr#delay td:nth-child(2)");
+      const framerateVal = $("tr#framerate td:nth-child(2)");
+      const uav_id = window.location.pathname.split("/").slice(1, -1)[0];
+      const topic = `final_${uav_id}`;
+
+      var nFrame = 0;
+      var avgDelayFrame = 0;
+      var tsLastFrame = -1;
+
+      const videoSocket = io.connect();
+      videoSocket.on(topic, (msg) => {
+        imgFeed.attr("src", msg.src);
+        renderHeaders(msg.headers);
+      });
+
+      const convertTZ = (date, tzString) => {
+        if (typeof date === "string") {
+          return new Date(date);
+        } else {
+          _date = date.toLocaleString("en-US", { timeZone: tzString });
+          return new Date(_date);
+        }
+      };
+
+      const renderHeaders = (headers) => {
+        if (tsLastFrame !== -1) {
+          const _delayFrame = new Date() - tsLastFrame;
+          avgDelayFrame = (avgDelayFrame * nFrame + _delayFrame) / ++nFrame;
+        }
+        tsLastFrame = new Date();
+
+        uavVal.text(headers.cam);
+        frameVal.text(headers.frame);
+        fromVal.text(headers.from);
+
+        const tsCreated = convertTZ(headers.timestamp);
+        const now = new Date();
+        tsCreatedVal.text(tsCreated.toISOString());
+        tsNowVal.text(now.toISOString());
+        const delay = Math.abs(now - tsCreated - 7 * 60 * 60 * 1000);
+        delayVal.text(`${delay} ms`);
+
+        var fps = 1000 / avgDelayFrame;
+        fps = Math.round(fps * 100) / 100;
+        framerateVal.text(`${fps} fps`);
+      };
+    </script>
+  </body>
+</html>

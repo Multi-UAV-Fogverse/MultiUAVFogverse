@@ -10,3 +10,5 @@ ultralytics
 supervision
 who-is-on-my-wifi
 wmi
+Flask==2.3.2
+Flask-SocketIO==5.3.4
