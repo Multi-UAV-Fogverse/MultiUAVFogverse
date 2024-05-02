@@ -52,7 +52,7 @@ $ bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server loca
 ```
 4. Write some events in the topic 
 ```
-$ bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092
+$ bin/kafka-console-producer.sh --topic final_uav_1 --bootstrap-server localhost:9092
 > This is my first event
 > This is my second event
 ```

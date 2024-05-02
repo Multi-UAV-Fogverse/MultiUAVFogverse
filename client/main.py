@@ -1,6 +1,6 @@
 import os
 import uuid
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fogverse import Consumer
 from dotenv import load_dotenv
@@ -19,16 +19,13 @@ html = """
     </head>
     <body>
         <h1>UAV Video Input</h1>
-        <div id="messages">
-        </div>
+        <img id='messages' alt="uav-data">
         </ul>
         <script>
             var ws = new WebSocket("ws://localhost:8000/ws");
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages')
-                var message = document.createElement('IMG')
-                message.src = event.data
-                messages.appendChild(message)
+                messages.src = event.data
             };
         </script>
     </body>
@@ -51,7 +48,7 @@ class Client(Consumer):
         #     'src': data,
         #     'headers': headers,
         # }
-        self.socket.send(data)
+        await self.socket.send_bytes(data)
 
 @app.get("/")
 async def get():
@@ -61,15 +58,35 @@ async def get():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    consumer = Client(websocket)  # Create a Client instance with the WebSocket object
-    await consumer.run()  # Run the Client
+
+    # Create new event loop and consumer
+    loop = asyncio.new_event_loop()
+    consumer = Client(websocket, loop=loop)
+    thread = threading.Thread(target=run_consumer, args=(websocket, loop, consumer))
+    thread.start()
+
     try:
         while True:
-            data = await websocket.receive()
+            data = await websocket.receive_bytes()
+            print("here")
             await websocket.send(data)
+    except WebSocketDisconnect:
+            print("WebSocket disconnected")
+
+# async def main(websocket, loop):
+#     consumer = Client(websocket, loop=loop)
+#     tasks = [consumer.run()]
+#     try:
+#         await asyncio.gather(*tasks)
+#     finally:
+#         for t in tasks:
+#             t.close()
+
+def run_consumer(websocket: WebSocket, loop, consumer):
+    try:
+        loop.run_until_complete(consumer.run())
     finally:
-        # Clean up
-        consumer._close()
+        loop.close()
 
 if __name__ == '__main__':
     uvicorn.run(app, host="localhost", port=8000)
