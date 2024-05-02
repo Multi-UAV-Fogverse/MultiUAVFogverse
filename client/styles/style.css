@@ -1,0 +1,52 @@
+.container-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.container {
+  margin: 10px;
+}
+
+#btn-container button {
+  margin: 5px;
+}
+
+div#btn-container {
+  width: 400px;
+  height: 400px;
+  display: grid;
+  grid: 133px 133px 133px / 133px 133px 133px;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: black;
+  place-items: center center;
+}
+
+button#left {
+  width: 100px;
+  height: 100px;
+  grid-row-start: 2;
+  grid-column-start: 1;
+}
+
+button#up {
+  width: 100px;
+  height: 100px;
+  grid-row-start: 1;
+  grid-column-start: 2;
+}
+
+button#down {
+  width: 100px;
+  height: 100px;
+  grid-row-start: 3;
+  grid-column-start: 2;
+}
+
+button#right {
+  width: 100px;
+  height: 100px;
+  grid-row-start: 2;
+  grid-column-start: 3;
+}

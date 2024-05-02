@@ -10,47 +10,56 @@
       integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
       crossorigin="anonymous"
     />
+    <link rel="stylesheet" href="../styles/style.css">
     <title>FogVerse Client</title>
   </head>
 
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-8 offset-lg-2">
-          <h3 class="mt-5">Live Streaming</h3>
-          <table>
-            <tr id="uav">
-              <td>Uav:</td>
-              <td></td>
-            </tr>
-            <tr id="frame">
-              <td>Frame:</td>
-              <td></td>
-            </tr>
-            <tr id="from">
-              <td>From:</td>
-              <td></td>
-            </tr>
-            <tr id="timestamp-created">
-              <td>Timestamp Created (UTC):</td>
-              <td></td>
-            </tr>
-            <tr id="timestamp-now">
-              <td>Timestamp Now:</td>
-              <td></td>
-            </tr>
-            <tr id="delay">
-              <td>Delay:</td>
-              <td></td>
-            </tr>
-            <tr id="framerate">
-              <td>framerate:</td>
-              <td></td>
-            </tr>
-          </table>
-          <img id="img-feed" src="#" width="100%" />
+    <div class="container-wrapper">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+              <h3 class="mt-5">Live Streaming</h3>
+              <table>
+                <tr id="uav">
+                  <td>Uav:</td>
+                  <td></td>
+                </tr>
+                <tr id="frame">
+                  <td>Frame:</td>
+                  <td></td>
+                </tr>
+                <tr id="from">
+                  <td>From:</td>
+                  <td></td>
+                </tr>
+                <tr id="timestamp-created">
+                  <td>Timestamp Created (UTC):</td>
+                  <td></td>
+                </tr>
+                <tr id="timestamp-now">
+                  <td>Timestamp Now:</td>
+                  <td></td>
+                </tr>
+                <tr id="delay">
+                  <td>Delay:</td>
+                  <td></td>
+                </tr>
+                <tr id="framerate">
+                  <td>framerate:</td>
+                  <td></td>
+                </tr>
+              </table>
+              <img id="img-feed" src="#" width="100%" />
+            </div>
+          </div>
         </div>
-      </div>
+        <div class="container" id="btn-container">
+          <button id="left">L</button>
+          <button id="up">U</button>
+          <button id="down">D</button>
+          <button id="right">R</button>
+        </div>
     </div>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
