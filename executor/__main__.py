@@ -45,8 +45,8 @@ class LocalExecutor(Producer):
         compressed_image = Image.open(buffer)
         data = np.array(compressed_image)
 
-        cv2.imshow(self.producer_topic, data)
-        cv2.waitKey(1)
+        # cv2.imshow(self.producer_topic, data)
+        # cv2.waitKey(1)
         return data
 
     async def process(self, data):

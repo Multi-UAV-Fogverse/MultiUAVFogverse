@@ -21,7 +21,6 @@ class Client(Consumer):
         self.auto_encode = False
         self.consumer_conf = {'group_id': str(uuid.uuid4())}
         self.topic_pattern = "^final_uav_[0-9a-zA-Z-]+$"
-        # self.consumer_topic = "final_uav_1"
         Consumer.__init__(self,loop=loop)
 
     async def send(self, data):
