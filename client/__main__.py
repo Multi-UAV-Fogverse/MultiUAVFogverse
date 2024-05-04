@@ -1,7 +1,7 @@
 import asyncio
 import threading
 import uuid
-import os
+import yaml
 
 from fogverse import Consumer
 from flask import Flask, render_template
@@ -38,6 +38,11 @@ def index(uav_id=None):
         return page_not_found()
     return render_template('index.html')
 
+@app.route('/')
+def control_center():
+    total_drone = get_total_drone()
+    return render_template('control_center.html')
+
 async def main(loop):
     consumer = Client(socketio, loop=loop)
     tasks = [consumer.run()]
@@ -52,6 +57,16 @@ def run_consumer(loop):
         loop.run_until_complete(main(loop))
     finally:
         loop.close()
+
+def get_total_drone():
+    # Open the YAML file
+    with open('global_config.yaml', 'r') as file:
+        # Load the YAML data into a Python object
+        data = yaml.safe_load(file)
+
+    # Access the data
+    return data['DRONE_TOTAL']
+
 
 if __name__ == '__main__':
     load_dotenv()
