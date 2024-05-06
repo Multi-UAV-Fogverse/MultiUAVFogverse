@@ -40,8 +40,11 @@ def index(uav_id=None):
 
 @app.route('/')
 def control_center():
-    total_drone = get_total_drone()
-    return render_template('control_center.html')
+    total_uav = get_total_uav()
+    listUavName = []
+    for i in range(total_uav):
+        listUavName.append("uav_"+str(i+1))
+    return render_template('control_center.html', uav_list=listUavName)
 
 async def main(loop):
     consumer = Client(socketio, loop=loop)
@@ -58,7 +61,7 @@ def run_consumer(loop):
     finally:
         loop.close()
 
-def get_total_drone():
+def get_total_uav():
     # Open the YAML file
     with open('global_config.yaml', 'r') as file:
         # Load the YAML data into a Python object
