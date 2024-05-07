@@ -14,6 +14,7 @@ def page_not_found(*args):
 app = Flask(__name__)
 app.register_error_handler(404, page_not_found)
 socketio = SocketIO(app)
+listCommands = []
 
 class Client(Consumer):
     def __init__(self, socket: SocketIO, loop=None):
@@ -33,20 +34,22 @@ class Client(Consumer):
         self.socket.emit(self.message.topic, data)
 
 class Command(Producer):
-    def __init__(self, socket: SocketIO, loop=None):
-        self.socket = socket
-        self.auto_encode = False
-        self.producer_topic = "uav_command"
+    def __init__(self, consumer, producer_topic: str, producer_server: str, loop=None):
+        self.consumer = consumer
+        self.producer_topic = producer_topic
+        self.producer_servers = producer_server
         
         Producer.__init__(self, loop=loop)
-    
 
-command = Command(socketio)
+    async def receive(self):
+        if len(self.consumer) > 0:
+            command = self.consumer.pop()
+            return command
+        return None
 
 @socketio.on("take_off")
 def handle_message(message):
-    print("here")
-    command.send(message)
+    listCommands.append(message)
     
 @app.route('/<uav_id>/')
 def index(uav_id=None):
@@ -64,7 +67,8 @@ def control_center():
 
 async def main(loop):
     consumer = Client(socketio, loop=loop)
-    tasks = [consumer.run()]
+    command = Command(listCommands, "uav_command", "localhost", loop=loop)
+    tasks = [consumer.run(), command.run()]
     try:
         await asyncio.gather(*tasks)
     finally:
