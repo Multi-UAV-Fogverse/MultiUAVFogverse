@@ -41,6 +41,15 @@ topic:
       retention.ms: 5000
       segment.bytes: 10000000
       segment.ms: 1200
+  
+  uav_command:
+    partitions: 1
+    server:
+      - local_kafka
+    config:
+      retention.ms: 5000
+      segment.bytes: 10000000
+      segment.ms: 1200
 
   ### with_cloud ARCHITECTURE topics
   # preprocessed:

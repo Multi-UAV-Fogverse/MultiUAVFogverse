@@ -3,7 +3,7 @@ import threading
 import uuid
 import yaml
 
-from fogverse import Consumer
+from fogverse import Consumer, Producer
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
@@ -32,6 +32,22 @@ class Client(Consumer):
         }
         self.socket.emit(self.message.topic, data)
 
+class Command(Producer):
+    def __init__(self, socket: SocketIO, loop=None):
+        self.socket = socket
+        self.auto_encode = False
+        self.producer_topic = "uav_command"
+        
+        Producer.__init__(self, loop=loop)
+    
+
+command = Command(socketio)
+
+@socketio.on("take_off")
+def handle_message(message):
+    print("here")
+    command.send(message)
+    
 @app.route('/<uav_id>/')
 def index(uav_id=None):
     if not uav_id:
