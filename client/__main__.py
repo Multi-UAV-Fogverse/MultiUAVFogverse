@@ -44,6 +44,7 @@ class Command(Producer):
     async def receive(self):
         if len(self.consumer) > 0:
             command = self.consumer.pop()
+            print(command)
             return command
         return None
 

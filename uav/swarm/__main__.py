@@ -1,12 +1,11 @@
-import threading
 from djitellopy import Tello, TelloSwarm
 import cv2
 from threading import Thread, Event
-import time, logging
+import logging
 import asyncio
-from network_scan import list_ip
-from fogverse import Producer, AbstractConsumer, ConsumerStorage, Profiling
-import uuid
+import network_scan
+from fogverse import Producer, Consumer, AbstractConsumer, ConsumerStorage, Profiling
+import yaml
 
 from io import BytesIO
 from PIL import Image
@@ -14,6 +13,7 @@ from PIL import Image
 CSV_DIR = "input-logs"
 
 vid = cv2.VideoCapture()
+uavs = []
 
 class UAVFrameConsumer(AbstractConsumer):
   def __init__(self, loop=None, executor=None):
@@ -80,9 +80,38 @@ class UAVFrameProducer(Producer):
     buffer.seek(0)
     return buffer.getvalue()
 
+class CommandConsumer(Consumer):
+    def __init__(self, consumer_topic: str, consumer_server: str, loop=None):
+      self.consumer_topic = consumer_topic
+      self.consumer_servers = consumer_server
+
+      Consumer.__init__(self)
+
+    def process(self, data):
+      print("here")
+      if data is not None:
+        print(data)
+        execute_command(data.split('_'))
+
+      return data
+
+def execute_command(command: list):
+  command = command.split('_')
+  commandType = command[0]
+  commandValue = command[1]
+  if len(command) > 0:
+    if commandType == "takeoff":
+        take_off_uavs(commandValue)
+
+def take_off_uavs(is_takeoff: str):
+  if is_takeoff == "true":
+    uavs.takeoff()
+  else:
+    uavs.land()
+
 def setup():
-    # listIp = list_ip()
-    telloSwarm = TelloSwarm.fromIps(["192.168.0.102"])
+    # listIp = network_scan.list_ip()
+    telloSwarm = TelloSwarm.fromIps(["192.168.0.101"])
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -98,15 +127,25 @@ def setup():
         tello.set_video_resolution(Tello.RESOLUTION_480P)
         tello.set_video_bitrate(Tello.BITRATE_1MBPS)
 
+    set_total_uav(len(telloSwarm))
+
     return telloSwarm
 
+def set_total_uav(total: int):
+    # Open the YAML file
+  yaml_data = "DRONE_TOTAL: " + str(total)
+  global_config = yaml.safe_load(yaml_data)
+
+  with open('global_config.yaml', 'w') as file:
+    yaml.dump(global_config, file)
+
+  print("Changing global config -> "+ open('global_config.yaml').read())
+
 async def main():
-    telloSwarm = setup()
-    # videoThreads = stream_on(telloSwarm)
-    # stream_off(videoThreads, telloSwarm)
+    uavs = setup()
 
     tasks = []
-    for index, tello in enumerate(telloSwarm):
+    for index, tello in enumerate(uavs):
         prod_topic = 'input_' + str(index+1)
 
         consumer = UAVFrameProducerStorage()
@@ -114,6 +153,9 @@ async def main():
         producer = UAVFrameProducer(consumer=consumer, producer_topic=prod_topic, producer_server='localhost')
         tasks.append(consumer.run())
         tasks.append(producer.run())
+    
+    command = CommandConsumer("uav_command", "localhost")
+    tasks.append(command.run())
     try:
         await asyncio.gather(*tasks)
     finally:

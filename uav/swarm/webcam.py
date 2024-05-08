@@ -1,11 +1,8 @@
 import threading
-from djitellopy import Tello, TelloSwarm
 import cv2
 from threading import Thread, Event
-import time, logging
 import asyncio
-from fogverse import Producer, AbstractConsumer, ConsumerStorage, Profiling
-import uuid
+from fogverse import Producer, AbstractConsumer, ConsumerStorage, Consumer
 
 from io import BytesIO
 from PIL import Image
@@ -67,6 +64,19 @@ class UAVFrameProducer(Producer):
     buffer.seek(0)
     return buffer.getvalue()
 
+class CommandConsumer(Consumer):
+    def __init__(self, consumer_topic: str, consumer_server: str, loop=None):
+      self.consumer_topic = consumer_topic
+      self.consumer_servers = consumer_server
+
+      print("here")
+      Consumer.__init__(self)
+
+    def process(self, data):
+      if data is not None:
+        print(data)
+      return super().process(data)
+
 async def main():
     vid = cv2.VideoCapture(0) 
     tasks = []
@@ -74,6 +84,8 @@ async def main():
     consumer = WebcamFrameProducerStorage()
     setattr(consumer, 'consumer', vid)
     producer = UAVFrameProducer(consumer=consumer, producer_topic="input_1", producer_server='localhost')
+    command = CommandConsumer("uav_command", "localhost")
+    tasks.append(command.run())
     tasks.append(consumer.run())
     tasks.append(producer.run())
     try:

@@ -25,4 +25,5 @@ def list_ip():
     ipTello = list(ipTello)
     return ipTello
 
-list_ip()
+if __name__ == "__main__":
+    list_ip()

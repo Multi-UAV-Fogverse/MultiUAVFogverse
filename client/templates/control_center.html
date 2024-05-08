@@ -69,12 +69,12 @@
     
         takeOffButton.addEventListener('click', function() {
             console.log('Take Off button clicked!');
-            commandSocket.emit('take_off', "true")
+            commandSocket.emit('take_off', "takeoff_true")
         });
 
         landButton.addEventListener('click', function() {
             console.log('Land button clicked!');
-            commandSocket.emit('take_off', "false")
+            commandSocket.emit('take_off', "takeoff_false")
         });
       
     </script>
