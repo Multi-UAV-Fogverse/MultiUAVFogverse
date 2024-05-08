@@ -44,9 +44,13 @@ class Command(Producer):
     async def receive(self):
         if len(self.consumer) > 0:
             command = self.consumer.pop()
-            print(command)
+            # print(command)
             return command
         return None
+    
+    def _after_send(self, data):
+        print(data)
+        print(self._topic)
 
 @socketio.on("take_off")
 def handle_message(message):
