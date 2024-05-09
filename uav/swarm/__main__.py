@@ -94,24 +94,28 @@ class CommandConsumer(Consumer):
         execute_command(data.split('_'))
 
       return data
+    
+    async def send(self, data, topic=None, key=None, headers=None, callback=None):
+      return None
 
 def execute_command(command: list):
-  command = command.split('_')
   commandType = command[0]
   commandValue = command[1]
+  print(command)
   if len(command) > 0:
     if commandType == "takeoff":
         take_off_uavs(commandValue)
 
 def take_off_uavs(is_takeoff: str):
+  # telloSwarm = TelloSwarm.fromIps(uavs)
   if is_takeoff == "true":
     uavs.takeoff()
   else:
     uavs.land()
 
 def setup():
-    # listIp = network_scan.list_ip()
-    telloSwarm = TelloSwarm.fromIps(["192.168.0.101"])
+    listIp = network_scan.list_ip()
+    telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
         # Change the logging level to ERROR only, ignore all INFO feedback from DJITELLOPY
@@ -142,6 +146,7 @@ def set_total_uav(total: int):
   print("Changing global config -> "+ open('global_config.yaml').read())
 
 async def main():
+    global uavs
     uavs = setup()
 
     tasks = []

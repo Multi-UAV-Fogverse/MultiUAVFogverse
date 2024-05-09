@@ -3,7 +3,7 @@ import threading
 import uuid
 import yaml
 
-from fogverse import Consumer, Producer
+from fogverse import Consumer, Producer, ConsumerStorage
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
@@ -14,32 +14,48 @@ def page_not_found(*args):
 app = Flask(__name__)
 app.register_error_handler(404, page_not_found)
 socketio = SocketIO(app)
-listCommands = []
+loop = None
+storage = None
+
+class MyStorage(ConsumerStorage):
+    def __init__(self, loop, keep_messages=False):
+        self.loop = loop
+        self.message = None
+        super().__init__(keep_messages)
+
+    async def add_command(self, command):
+        await self.q.put(command)
+        return command
 
 class Command(Producer):
     def __init__(self, consumer, producer_topic: str, producer_server: str, loop=None):
         self.consumer = consumer
         self.producer_topic = producer_topic
         self.producer_servers = producer_server
-        
+
         Producer.__init__(self, loop=loop)
 
     async def receive(self):
-        if len(self.consumer) > 0:
-            command = self.consumer.pop()
-            # print(command)
-            return command
-        return None
-    
+        return await self.consumer.get()
+
     def _after_send(self, data):
+        print('masuk after send')
         print(data)
         print(self.producer_servers)
         print(self._topic)
 
+    def callback(record, *args, **kwargs):
+        print('masuk callback, ini callback jalan kalau send nya berhasil')
+        print(f'record: {record}')
+        print(f'args: {args}')
+        print(f'kwargs: {kwargs}')
+        return record
+
 @socketio.on("take_off")
 def handle_message(message):
-    listCommands.append(message)
-    
+    task = storage.send(message)
+    asyncio.run_coroutine_threadsafe(task, loop)
+
 @app.route('/<uav_id>/')
 def index(uav_id=None):
     if not uav_id:
@@ -55,7 +71,9 @@ def control_center():
     return render_template('control_center.html', uav_list=listUavName)
 
 async def main(loop):
-    command = Command(listCommands, "uav_command", "localhost:9092", loop=loop)
+    global storage
+    storage = MyStorage(loop=loop)
+    command = Command(storage, "uav_command", "localhost:9092", loop=loop)
     tasks = [command.run()]
     try:
         await asyncio.gather(*tasks)

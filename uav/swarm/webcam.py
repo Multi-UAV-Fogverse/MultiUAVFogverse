@@ -76,6 +76,9 @@ class CommandConsumer(Consumer):
       if data is not None:
         print(data)
       return super().process(data)
+    
+    async def send(self, data, topic=None, key=None, headers=None, callback=None):
+      return None
 
 async def main():
     vid = cv2.VideoCapture(0) 

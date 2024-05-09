@@ -10,13 +10,14 @@ from PIL import Image
 class CommandConsumer(Consumer):
     def __init__(self, consumer_topic: str, consumer_server: str, loop=None):
       self.consumer_topic = consumer_topic
-      self.consumer_servers = consumer_server
+      self.producer_topic = consumer_topic
+      self._producer_servers = consumer_server
+      self.producer_servers = consumer_server
 
       Consumer.__init__(self)
 
-    def receive(self):
-       print("receiving")
-       return super().receive()
+    async def receive(self):
+       return "receiving"
 
     def process(self, data):
       print("here")
@@ -27,7 +28,7 @@ class CommandConsumer(Consumer):
 async def main():
     tasks = []
 
-    command = CommandConsumer("uav_command", "localhost")
+    command = CommandConsumer(consumer_topic="uav_command", consumer_server="localhost:9092")
     tasks.append(command.run())
     try:
         await asyncio.gather(*tasks)
