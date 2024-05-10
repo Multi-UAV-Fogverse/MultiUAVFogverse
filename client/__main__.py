@@ -2,12 +2,14 @@ import asyncio
 import threading
 import uuid
 import yaml
+import logging
 
 from fogverse import Consumer, Producer, ConsumerStorage
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
-import cv2
+from fogverse.fogverse_logging import FogVerseLogging
+from fogverse.util import get_timestamp, get_timestamp_str, timestamp_to_datetime
 
 
 def page_not_found(*args):
@@ -25,6 +27,15 @@ class Client(Consumer):
         self.auto_encode = False
         self.consumer_conf = {'group_id': str(uuid.uuid4())}
         self.topic_pattern = "^final_uav_[0-9a-zA-Z-]+$"
+
+        self._headers = ["uav_id", "frame_id", "created_timestamp", "executor_timestamp", "client_timestamp", "latency"]
+        self._fogverse_logger = FogVerseLogging(
+            name=f'{self.__class__.__name__}',
+            dirname="uav-logs",
+            csv_header=self._headers,
+            level= logging.INFO + 2
+        )
+
         Consumer.__init__(self,loop=loop)
 
     async def send(self, data):
@@ -35,6 +46,20 @@ class Client(Consumer):
             'headers': headers,
         }
         self.socket.emit(self.message.topic, data)
+
+        # Logging
+        client_timestamp = get_timestamp()
+        created_timestamp = timestamp_to_datetime(headers['created_timestamp'])
+        latency = client_timestamp - created_timestamp
+        frame_log = [
+            headers['uav_id'], 
+            headers['frame_id'], 
+            headers['created_timestamp'], 
+            headers['executor_timestamp'],
+            get_timestamp_str(date=client_timestamp),
+            latency
+            ]
+        self._fogverse_logger.csv_log(frame_log)
 
 class MyCommandStorage(ConsumerStorage):
     def __init__(self, loop, keep_messages=False):

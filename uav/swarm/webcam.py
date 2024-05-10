@@ -23,21 +23,8 @@ class WebcamFrameConsumer(AbstractConsumer):
     # self.profiling_name = f'{self.__class__.__name__}'
     # Profiling.__init__(self, name=self.profiling_name, dirname=CSV_DIR)
 
-    self._headers = ["frame_id","timestamp"]
-
-    self._fogverse_logger = FogVerseLogging(
-            name=f'{self.__class__.__name__}',
-            dirname="webcam-logs",
-            csv_header=self._headers,
-            level= logging.INFO + 2
-        )
-
-    self._frame_id = 1
-
   def _receive(self):
     ret, frame = self.consumer.read()
-    self._fogverse_logger.csv_log([self._frame_id, get_timestamp_str()])
-    self._frame_id += 1
     return frame
 
   async def receive(self):
@@ -62,19 +49,20 @@ class WebcamFrameProducerStorage(WebcamFrameConsumer, ConsumerStorage):
     return data
 
 class WebcamFrameProducer(Producer):
-  def __init__(self, consumer, producer_topic: str, producer_server: str, loop=None):
+  def __init__(self, consumer, uav_id: str, producer_topic: str, producer_server: str, loop=None):
     self.consumer = consumer
+    self.uav_id = uav_id
     self.producer_topic = producer_topic
     self.producer_servers = producer_server
 
-    self._headers = ["frame_id","timestamp"]
+    # self._headers = ["frame_id","timestamp"]
 
-    self._fogverse_logger = FogVerseLogging(
-            name=f'{self.__class__.__name__}',
-            dirname="webcam-logs",
-            csv_header=self._headers,
-            level= logging.INFO + 2
-        )
+    # self._fogverse_logger = FogVerseLogging(
+    #         name=f'{self.__class__.__name__}',
+    #         dirname="webcam-logs",
+    #         csv_header=self._headers,
+    #         level= logging.INFO + 2
+    #     )
 
     self._frame_id = 1
 
@@ -94,9 +82,14 @@ class WebcamFrameProducer(Producer):
     return buffer.getvalue()
 
   async def send(self, data, topic=None, key=None, headers=None, callback=None):
-    self._fogverse_logger.csv_log([self._frame_id, get_timestamp_str()])
+    # self._fogverse_logger.csv_log([self._frame_id, get_timestamp_str()])
+    self._headers = [
+      ("uav_id", self.uav_id.encode()),
+      ("frame_id", str(self._frame_id).encode()),
+      ("created_timestamp", get_timestamp_str().encode())
+      ]
     self._frame_id += 1
-    return await super().send(data, topic, key, headers, callback)
+    return await super().send(data, topic, key, self._headers, callback)
   
 
 class CommandConsumer(Consumer):
@@ -104,7 +97,6 @@ class CommandConsumer(Consumer):
       self.consumer_topic = consumer_topic
       self.consumer_servers = consumer_server
 
-      print("here")
       Consumer.__init__(self)
 
     def process(self, data):
@@ -136,7 +128,7 @@ async def main():
 
     consumer = WebcamFrameProducerStorage()
     setattr(consumer, 'consumer', vid)
-    producer = WebcamFrameProducer(consumer=consumer, producer_topic="input_1", producer_server='localhost')
+    producer = WebcamFrameProducer(consumer=consumer, uav_id="uav_1", producer_topic="input_1", producer_server='localhost')
     command = CommandConsumer("uav_command", "localhost")
     tasks.append(command.run())
     tasks.append(consumer.run())

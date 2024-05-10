@@ -9,7 +9,7 @@ import supervision as sv
 
 from fogverse import Consumer, Producer, ConsumerStorage, Profiling
 # from fogverse.logging.logging import CsvLogging
-from fogverse.util import get_header, numpy_to_base64_url
+from fogverse.util import get_timestamp_str, numpy_to_base64_url
 
 from PIL import Image
 from io import BytesIO
@@ -58,12 +58,10 @@ class LocalExecutor(Producer):
         return numpy_to_base64_url(img, os.getenv('ENCODING', 'jpg')).encode()
     
     async def send(self, data):
-        headers = list(self.message.headers)
-        headers.append(('type',b'final'))
-        await super().send(data, headers=headers)
+        await super().send(data, headers=self.message.headers)
 
 # ======================================================================
-class LocalExecutor1(LocalExecutor):
+class LocalExecutorProducer(LocalExecutor):
     def __init__(self, consumer, producer_topic: str, producer_server: str):
         self.producer_servers = producer_server
         self.producer_topic = producer_topic
@@ -71,8 +69,7 @@ class LocalExecutor1(LocalExecutor):
 
     async def send(self, data):
         headers = list(self.message.headers)
-        uav_id = get_header(headers, 'cam')
-        headers.append(('from',b'executor'))
+        headers.append(('executor_timestamp', get_timestamp_str().encode()))
         self.message.headers = headers
         await super().send(data)
 
@@ -82,7 +79,7 @@ async def main():
         cons_topic = 'input_' + str(i+1)
         prod_topic = 'final_uav_' + str(i+1)
         consumer = LocalExecutorStorage(cons_topic, 'localhost')
-        producer = LocalExecutor1(consumer, prod_topic, 'localhost')
+        producer = LocalExecutorProducer(consumer, prod_topic, 'localhost')
         tasks.append(consumer.run())
         tasks.append(producer.run())
     try:
