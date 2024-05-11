@@ -77,9 +77,10 @@ async def main():
     tasks = []
     for i in range(TOTAL_UAV):    
         cons_topic = 'input_' + str(i+1)
+        host = 'localhost'
         prod_topic = 'final_uav_' + str(i+1)
-        consumer = LocalExecutorStorage(cons_topic, 'localhost')
-        producer = LocalExecutorProducer(consumer, prod_topic, 'localhost')
+        consumer = LocalExecutorStorage(cons_topic, host)
+        producer = LocalExecutorProducer(consumer, prod_topic, host)
         tasks.append(consumer.run())
         tasks.append(producer.run())
     try:

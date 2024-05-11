@@ -22,15 +22,17 @@ loop = None
 storage = None
 
 class Client(Consumer):
-    def __init__(self, socket: SocketIO, loop=None):
+    def __init__(self, socket: SocketIO, consumer_topic: str, consumer_server: str, loop=None):
         self.socket = socket
         self.auto_encode = False
-        self.consumer_conf = {'group_id': str(uuid.uuid4())}
-        self.topic_pattern = "^final_uav_[0-9a-zA-Z-]+$"
+        self.consumer_servers = consumer_server
+        self.consumer_topic = consumer_topic
+        # self.consumer_conf = {'group_id': str(uuid.uuid4())}
+        # self.topic_pattern = "^final_uav_[0-9a-zA-Z-]+$"
 
         self._headers = ["uav_id", "frame_id", "created_timestamp", "executor_timestamp", "client_timestamp", "latency"]
         self._fogverse_logger = FogVerseLogging(
-            name=f'{self.__class__.__name__}',
+            name=f'{self.consumer_topic}',
             dirname="uav-logs",
             csv_header=self._headers,
             level= logging.INFO + 2
@@ -116,10 +118,17 @@ def control_center():
 
 async def main(loop):
     global storage
-    consumer = Client(socketio, loop=loop)
+    tasks = []
+    host = 'localhost'
+
+    total_uav = get_total_uav()
+    for i in range(total_uav):
+        cons_topic = 'final_uav_' + str(i+1)
+        consumer = Client(socket=socketio, consumer_topic=cons_topic, consumer_server=host ,loop=loop)
+        tasks.append(consumer.run())
     storage = MyCommandStorage(loop=loop)
-    command = Command(storage, "uav_command", "localhost:9092", loop=loop)    
-    tasks = [consumer.run(), command.run()]
+    command = Command(storage, "uav_command", host, loop=loop)
+    tasks.append(command.run())    
     try:
         await asyncio.gather(*tasks)
     finally:
