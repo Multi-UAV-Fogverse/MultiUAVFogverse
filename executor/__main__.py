@@ -1,22 +1,22 @@
 import asyncio
-import time
 from ultralytics import YOLO
 import cv2
 import os
-import math
-import supervision as sv
-
 
 from fogverse import Consumer, Producer, ConsumerStorage, Profiling
-# from fogverse.logging.logging import CsvLogging
 from fogverse.util import get_timestamp_str, numpy_to_base64_url
 
 from PIL import Image
 from io import BytesIO
 import numpy as np
+import logging
 
+
+# Set the logging level to ERROR to suppress info and debug logs
+logging.getLogger('ultralytics').setLevel(logging.ERROR)
 CSV_DIR = "executor-logs"
-TOTAL_UAV = 2
+TOTAL_UAV = 1
+weights_path = 'yolo-Weights/yolov8n.pt'
 
 class LocalExecutorStorage(Consumer, ConsumerStorage):
     def __init__(self, consumer_topic: str, consumer_server: str, keep_messages=False, loop=None):
@@ -29,13 +29,15 @@ class LocalExecutorStorage(Consumer, ConsumerStorage):
 
 class LocalExecutor(Producer):
     def __init__(self, consumer, loop=None):
-        self.model = YOLO("yolo-Weights/yolov8n.pt")
-        self.model.classes = [0]
         self.consumer = consumer
         
         Producer.__init__(self, loop=loop)
         # Profiling.__init__(self, name=self.__class__.__name__, dirname=CSV_DIR)
 
+    async def _after_start(self):
+        print("Loading YOLOv8 model...")
+        self.model = YOLO(weights_path)
+        print("Model loaded successfully.")
 
     async def receive(self):
         return await self.consumer.get()
@@ -45,9 +47,28 @@ class LocalExecutor(Producer):
         compressed_image = Image.open(buffer)
         data = np.array(compressed_image)
 
-        # cv2.imshow(self.producer_topic, data)
-        # cv2.waitKey(1)
-        return data
+        # Ensure the data is in the correct format
+        if len(data.shape) == 3 and data.shape[2] == 3:  # Check for 3-channel image
+            results = self.model(data)  # Get the results from the model
+            annotated_frame = data.copy()
+
+            # Extract the bounding boxes, confidence scores, and class IDs
+            boxes = results[0].boxes.xyxy.cpu().numpy()
+            confidences = results[0].boxes.conf.cpu().numpy()
+            class_ids = results[0].boxes.cls.cpu().numpy().astype(int)
+
+            # Filter for human class (class ID 0) and annotate the frame
+            for box, conf, cls_id in zip(boxes, confidences, class_ids):
+                if cls_id == 0:  # Only consider the human class (class ID 0)
+                    x1, y1, x2, y2 = map(int, box)
+                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    label = f"{self.model.names[cls_id]} {conf:.2f}"
+                    cv2.putText(annotated_frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            return annotated_frame  # Return the annotated image
+        else:
+            print("Error: Input data is not in the correct format.")
+            return data
 
     async def process(self, data):
         return await self._loop.run_in_executor(None,

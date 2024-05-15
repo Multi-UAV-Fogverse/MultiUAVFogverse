@@ -20,9 +20,6 @@ class WebcamFrameConsumer(AbstractConsumer):
     self.auto_decode = False
     self._executor = executor
 
-    # self.profiling_name = f'{self.__class__.__name__}'
-    # Profiling.__init__(self, name=self.profiling_name, dirname=CSV_DIR)
-
   def _receive(self):
     ret, frame = self.consumer.read()
     return frame
@@ -38,7 +35,6 @@ class WebcamFrameConsumer(AbstractConsumer):
 
 class WebcamFrameProducerStorage(WebcamFrameConsumer, ConsumerStorage):
   def __init__(self):
-    # self.frame_size = (640, 480)
     WebcamFrameConsumer.__init__(self)
     ConsumerStorage.__init__(self)
     
@@ -55,21 +51,11 @@ class WebcamFrameProducer(Producer):
     self.producer_topic = producer_topic
     self.producer_servers = producer_server
 
-    # self._headers = ["frame_id","timestamp"]
-
-    # self._fogverse_logger = FogVerseLogging(
-    #         name=f'{self.__class__.__name__}',
-    #         dirname="webcam-logs",
-    #         csv_header=self._headers,
-    #         level= logging.INFO + 2
-    #     )
-
     self._frame_id = 1
 
     Producer.__init__(self, loop=loop)
 
     self.profiling_name = f'{self.__class__.__name__}'
-    # Profiling.__init__(self, name=self.profiling_name, dirname=CSV_DIR)
 
   async def receive(self):
     return await self.consumer.get()
@@ -82,7 +68,6 @@ class WebcamFrameProducer(Producer):
     return buffer.getvalue()
 
   async def send(self, data, topic=None, key=None, headers=None, callback=None):
-    # self._fogverse_logger.csv_log([self._frame_id, get_timestamp_str()])
     self._headers = [
       ("uav_id", self.uav_id.encode()),
       ("frame_id", str(self._frame_id).encode()),
@@ -116,7 +101,6 @@ def execute_command(command: list):
         take_off_uavs(commandValue)
 
 def take_off_uavs(is_takeoff: str):
-  # telloSwarm = TelloSwarm.fromIps(uavs)
   if is_takeoff == "true":
     print("uavs takeoff")
   else:

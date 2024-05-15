@@ -32,7 +32,7 @@ class Client(Consumer):
 
         self._headers = ["uav_id", "frame_id", "created_timestamp", "executor_timestamp", "client_timestamp", "latency"]
         self._fogverse_logger = FogVerseLogging(
-            name=f'{self.consumer_topic}',
+            name=f'{self.consumer_topic}_scenario_1',
             dirname="uav-logs",
             csv_header=self._headers,
             level= logging.INFO + 2

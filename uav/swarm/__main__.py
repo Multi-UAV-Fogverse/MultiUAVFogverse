@@ -5,6 +5,7 @@ import logging
 import asyncio
 import network_scan
 from fogverse import Producer, Consumer, AbstractConsumer, ConsumerStorage, Profiling
+from fogverse.util import get_timestamp_str
 import yaml
 
 from io import BytesIO
@@ -22,13 +23,8 @@ class UAVFrameConsumer(AbstractConsumer):
     self.auto_decode = False
 
     self.profiling_name = f'{self.__class__.__name__}'
-    # Profiling.__init__(self, name=self.profiling_name, dirname=CSV_DIR)
         
   def start_consumer(self):
-    # self.event = Event()
-    # Thread(target=battery_consumption_logger, args=(self.event,)).start()
-    # self.consumer.connect()
-    # Thread(target=uav_controller, args=(self.consumer, )).start()
     self.consumer.streamon()
     self.frame_reader = self.consumer.get_frame_read()
 
@@ -39,8 +35,6 @@ class UAVFrameConsumer(AbstractConsumer):
     return await self._loop.run_in_executor(self._executor, self._receive)
   
   def process(self, data):
-    # cv2.imshow("Image from UAV", data)
-    # cv2.waitKey(1)
     return data
 
   def close_consumer(self):
@@ -49,7 +43,6 @@ class UAVFrameConsumer(AbstractConsumer):
 
 class UAVFrameProducerStorage(UAVFrameConsumer, ConsumerStorage):
   def __init__(self):
-    # self.frame_size = (640, 480)
     UAVFrameConsumer.__init__(self)
     ConsumerStorage.__init__(self)
     
@@ -60,15 +53,15 @@ class UAVFrameProducerStorage(UAVFrameConsumer, ConsumerStorage):
     return data
 
 class UAVFrameProducer(Producer):
-  def __init__(self, consumer, producer_topic: str, producer_server: str, loop=None):
+  def __init__(self, consumer, uav_id: str, producer_topic: str, producer_server: str, loop=None):
     self.consumer = consumer
+    self.uav_id = uav_id
     self.producer_topic = producer_topic
     self.producer_servers = producer_server
 
     Producer.__init__(self, loop=loop)
 
-    self.profiling_name = f'{self.__class__.__name__}'
-    # Profiling.__init__(self, name=self.profiling_name, dirname=CSV_DIR)
+    self._frame_id = 1
 
   async def receive(self):
     return await self.consumer.get()
@@ -79,6 +72,15 @@ class UAVFrameProducer(Producer):
     image.save(buffer, format="JPEG", quality=30)
     buffer.seek(0)
     return buffer.getvalue()
+  
+  async def send(self, data, topic=None, key=None, headers=None, callback=None):
+    self._headers = [
+      ("uav_id", self.uav_id.encode()),
+      ("frame_id", str(self._frame_id).encode()),
+      ("created_timestamp", get_timestamp_str().encode())
+      ]
+    self._frame_id += 1
+    return await super().send(data, topic, key, self._headers, callback)
 
 class CommandConsumer(Consumer):
     def __init__(self, consumer_topic: str, consumer_server: str, loop=None):
@@ -88,11 +90,8 @@ class CommandConsumer(Consumer):
       Consumer.__init__(self)
 
     def process(self, data):
-      print("here")
       if data is not None:
-        print(data)
-        execute_command(data.split('_'))
-
+        Thread(target=execute_command, args=(data.split('_'),)).start()
       return data
     
     async def send(self, data, topic=None, key=None, headers=None, callback=None):
@@ -107,14 +106,14 @@ def execute_command(command: list):
         take_off_uavs(commandValue)
 
 def take_off_uavs(is_takeoff: str):
-  # telloSwarm = TelloSwarm.fromIps(uavs)
   if is_takeoff == "true":
     uavs.takeoff()
   else:
     uavs.land()
 
 def setup():
-    listIp = network_scan.list_ip()
+    # listIp = network_scan.list_ip()
+    listIp = ['192.168.0.101']
     telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
@@ -152,10 +151,11 @@ async def main():
     tasks = []
     for index, tello in enumerate(uavs):
         prod_topic = 'input_' + str(index+1)
+        uav_id = 'uav_' + str(index+1)
 
         consumer = UAVFrameProducerStorage()
         setattr(consumer, 'consumer', tello)
-        producer = UAVFrameProducer(consumer=consumer, producer_topic=prod_topic, producer_server='localhost')
+        producer = UAVFrameProducer(consumer=consumer, uav_id=uav_id, producer_topic=prod_topic, producer_server='localhost')
         tasks.append(consumer.run())
         tasks.append(producer.run())
     
@@ -166,7 +166,6 @@ async def main():
     finally:
         for t in tasks:
             t.close()
-    # telloSwarm.end()
 
 
 if __name__ == '__main__':
