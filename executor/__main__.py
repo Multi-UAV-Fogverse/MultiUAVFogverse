@@ -1,6 +1,7 @@
 import asyncio
 from ultralytics import YOLO
 import cv2
+import torch
 import os
 
 from fogverse import Consumer, Producer, ConsumerStorage, Profiling
@@ -37,7 +38,14 @@ class LocalExecutor(Producer):
     async def _after_start(self):
         print("Loading YOLOv8 model...")
         self.model = YOLO(weights_path)
+        # Move the model to GPU if available
+        if torch.cuda.is_available():
+            self.model.to('cuda')
+            print("Model moved to GPU.")
+        else:
+            print("CUDA not available. Model using CPU.")
         print("Model loaded successfully.")
+
 
     async def receive(self):
         return await self.consumer.get()
