@@ -9,18 +9,16 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy the current directory contents into the container at /app
+COPY main.py /app
+COPY topic.yaml /app
+COPY requirements.txt /app
+
 # Install any needed packages specified in requirements.txt
-COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code into the container
-COPY . /app/
+# Set the environment variable for Kafka
+ENV KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
 
-# Clone the FogVerse submodule
-RUN git clone --recurse-submodules https://github.com/fogverse/fogverse.git /app/fogverse
-
-# Expose the port that Flask will run on
-EXPOSE 5000
-
-# Run the application
-CMD ["python", "__main__.py"]
+# Run run_script.py when the container launches
+CMD ["python", "main.py"]

@@ -7,7 +7,6 @@ import logging
 from fogverse import Consumer, Producer, ConsumerStorage
 from flask import Flask, render_template
 from flask_socketio import SocketIO
-from dotenv import load_dotenv
 from fogverse.fogverse_logging import FogVerseLogging
 from fogverse.util import get_timestamp, get_timestamp_str, timestamp_to_datetime
 
@@ -32,7 +31,7 @@ class Client(Consumer):
 
         self._headers = ["uav_id", "frame_id", "created_timestamp", "executor_timestamp", "client_timestamp", "latency"]
         self._fogverse_logger = FogVerseLogging(
-            name=f'{self.consumer_topic}_scenario_1',
+            name=f'{self.consumer_topic}_scenario_2_cuda',
             dirname="uav-logs",
             csv_header=self._headers,
             level= logging.INFO + 2
@@ -152,7 +151,6 @@ def get_total_uav():
 
 
 if __name__ == '__main__':
-    load_dotenv()
     loop = asyncio.new_event_loop()
     thread = threading.Thread(target=run_consumer, args=(loop,))
     thread.start()

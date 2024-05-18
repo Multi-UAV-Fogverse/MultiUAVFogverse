@@ -1,0 +1,35 @@
+version: "2"
+
+services:  
+  datastream-processor:
+    build: ./datastream-processor/swarm
+    ports:
+      - "4000:80"
+    depends_on:
+      - kafka-broker
+      - kafka-topic-creator
+    environment:
+      - PRODUCER_SERVERS=kafka-broker:9092
+      - CONSUMER_SERVERS=kafka-broker:9092
+      - PRODUCER_TOPIC=input
+    restart: always
+  
+  client:
+    build:
+      context: ./client
+    ports:
+      - "5000:5000"
+    environment:
+      - PRODUCER_SERVERS=kafka-broker:9092
+      - CONSUMER_SERVERS=kafka-broker:9092
+    restart: always
+  
+  executor:
+    build:
+      context: ./executor
+    ports:
+      - "5001:5001"
+    environment:
+      - PRODUCER_SERVERS=kafka-broker:9092
+      - CONSUMER_SERVERS=kafka-broker:9092
+    restart: always

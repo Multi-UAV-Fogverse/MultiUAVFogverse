@@ -16,7 +16,7 @@ import logging
 # Set the logging level to ERROR to suppress info and debug logs
 logging.getLogger('ultralytics').setLevel(logging.ERROR)
 CSV_DIR = "executor-logs"
-TOTAL_UAV = 1
+TOTAL_UAV = 2
 weights_path = 'yolo-Weights/yolov8n.pt'
 
 class LocalExecutorStorage(Consumer, ConsumerStorage):

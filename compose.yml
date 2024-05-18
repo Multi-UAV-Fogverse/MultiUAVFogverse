@@ -1,6 +1,0 @@
-version: '3'
-
-services:
-    swarm_input:
-      build: ./uav/swarm
-    env_file: .docker-compose.env

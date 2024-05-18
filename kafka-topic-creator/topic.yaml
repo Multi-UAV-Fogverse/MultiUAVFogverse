@@ -1,6 +1,5 @@
 server:
   local_kafka: localhost:9092
-  # cloud_kafka: 34.101.244.110:9095
 
 topic:
   input_1:
