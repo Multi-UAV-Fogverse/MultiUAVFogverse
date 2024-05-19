@@ -3,10 +3,9 @@ from ultralytics import YOLO
 import cv2
 import torch
 import os
-
-from fogverse import Consumer, Producer, ConsumerStorage, Profiling
+import yaml
+from fogverse import Consumer, Producer, ConsumerStorage
 from fogverse.util import get_timestamp_str, numpy_to_base64_url
-
 from PIL import Image
 from io import BytesIO
 import numpy as np
@@ -16,8 +15,7 @@ import logging
 # Set the logging level to ERROR to suppress info and debug logs
 logging.getLogger('ultralytics').setLevel(logging.ERROR)
 CSV_DIR = "executor-logs"
-TOTAL_UAV = 2
-weights_path = 'yolo-Weights/yolov8n.pt'
+weights_path = './yolo-Weights/yolov8n.pt'
 
 class LocalExecutorStorage(Consumer, ConsumerStorage):
     def __init__(self, consumer_topic: str, consumer_server: str, keep_messages=False, loop=None):
@@ -26,14 +24,12 @@ class LocalExecutorStorage(Consumer, ConsumerStorage):
 
         Consumer.__init__(self, loop=loop)
         ConsumerStorage.__init__(self, keep_messages=keep_messages)
-        # Profiling.__init__(self, name=self.__class__.__name__, dirname=CSV_DIR)
 
 class LocalExecutor(Producer):
     def __init__(self, consumer, loop=None):
         self.consumer = consumer
         
         Producer.__init__(self, loop=loop)
-        # Profiling.__init__(self, name=self.__class__.__name__, dirname=CSV_DIR)
 
     async def _after_start(self):
         print("Loading YOLOv8 model...")
@@ -102,9 +98,19 @@ class LocalExecutorProducer(LocalExecutor):
         self.message.headers = headers
         await super().send(data)
 
+def get_total_uav():
+    # Open the YAML file
+    with open('config.yaml', 'r') as file:
+        # Load the YAML data into a Python object
+        data = yaml.safe_load(file)
+
+    # Access the data
+    return data['DRONE_TOTAL']
+
 async def main():
     tasks = []
-    for i in range(TOTAL_UAV):    
+    total_uav = get_total_uav()
+    for i in range(total_uav):    
         cons_topic = 'input_' + str(i+1)
         host = 'localhost'
         prod_topic = 'final_uav_' + str(i+1)

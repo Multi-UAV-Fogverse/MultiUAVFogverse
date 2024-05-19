@@ -1,9 +1,7 @@
 import asyncio
 import threading
-import uuid
 import yaml
 import logging
-
 from fogverse import Consumer, Producer, ConsumerStorage
 from flask import Flask, render_template
 from flask_socketio import SocketIO
@@ -142,7 +140,7 @@ def run_consumer(loop):
 
 def get_total_uav():
     # Open the YAML file
-    with open('global_config.yaml', 'r') as file:
+    with open('config.yaml', 'r') as file:
         # Load the YAML data into a Python object
         data = yaml.safe_load(file)
 

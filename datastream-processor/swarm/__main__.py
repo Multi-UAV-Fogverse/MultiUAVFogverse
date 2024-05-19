@@ -1,13 +1,11 @@
 from djitellopy import Tello, TelloSwarm
 import cv2
-from threading import Thread, Event
+from threading import Thread
 import logging
 import asyncio
-import network_scan
-from fogverse import Producer, Consumer, AbstractConsumer, ConsumerStorage, Profiling
+from fogverse import Producer, Consumer, AbstractConsumer, ConsumerStorage
 from fogverse.util import get_timestamp_str
 import yaml
-
 from io import BytesIO
 from PIL import Image
 

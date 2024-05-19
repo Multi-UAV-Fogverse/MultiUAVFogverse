@@ -5,14 +5,13 @@ services:
     build: ./datastream-processor/swarm
     ports:
       - "4000:80"
-    depends_on:
-      - kafka-broker
-      - kafka-topic-creator
     environment:
       - PRODUCER_SERVERS=kafka-broker:9092
       - CONSUMER_SERVERS=kafka-broker:9092
       - PRODUCER_TOPIC=input
     restart: always
+    networks:
+      - multiuavfogverse
   
   client:
     build:
@@ -23,6 +22,8 @@ services:
       - PRODUCER_SERVERS=kafka-broker:9092
       - CONSUMER_SERVERS=kafka-broker:9092
     restart: always
+    networks:
+      - multiuavfogverse
   
   executor:
     build:
@@ -33,3 +34,9 @@ services:
       - PRODUCER_SERVERS=kafka-broker:9092
       - CONSUMER_SERVERS=kafka-broker:9092
     restart: always
+    networks:
+      - multiuavfogverse
+  
+networks:
+  multiuavfogverse:
+    external: true

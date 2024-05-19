@@ -27,9 +27,5 @@ RUN git clone --recurse-submodules https://github.com/fogverse/fogverse.git /app
 # Make port 80 available to the world outside this container
 EXPOSE 80
 
-# Set the environment variable for Kafka
-ENV PRODUCER_SERVERS=kafka-broker:9092
-ENV CONSUMER_SERVERS=kafka-broker:9092
-
 # Run __main__.py when the container launches
 CMD ["python", "__main__.py"]
