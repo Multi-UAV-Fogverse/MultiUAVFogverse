@@ -12,6 +12,11 @@ services:
     restart: always
     networks:
       - multiuavfogverse
+    deploy:
+      resources:
+        limits:
+          cpus: '2'      # Limit the service to 2 CPUs
+          memory: 2g       # Limit the service to 2GB of memory
   
   executor:
     build:
@@ -26,6 +31,9 @@ services:
       - multiuavfogverse
     deploy:
       resources:
+        limits:
+          cpus: '5'      # Limit the service to 5 CPUs
+          memory: 2g       # Limit the service to 2GB of memory
         reservations:
           devices:
             - driver: nvidia

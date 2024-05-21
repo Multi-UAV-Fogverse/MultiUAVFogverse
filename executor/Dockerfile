@@ -19,12 +19,6 @@ COPY requirements.txt /app/
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the check_cuda.py script into the container
-COPY check_cuda.py /app/
-
-# Run the CUDA check script
-RUN python check_cuda.py
-
 # Clone the FogVerse submodule
 RUN git clone --recurse-submodules https://github.com/fogverse/fogverse.git /app/fogverse
 

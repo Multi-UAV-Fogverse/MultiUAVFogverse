@@ -28,6 +28,11 @@ services:
       - KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS=7000
     networks:
       - multiuavfogverse
+    deploy:
+      resources:
+        limits:
+          cpus: '2'      # Limit the service to 2 CPUs
+          memory: 3g       # Limit the service to 3GB of memory
 volumes:
   kafka_data:
     driver: local

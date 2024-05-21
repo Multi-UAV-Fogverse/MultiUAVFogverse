@@ -31,6 +31,8 @@ Prerequisite:
 ### Kafka Setup (run Kafka with Kraft)
 1. `cd ./kafka`
 2. `docker compose up -d`
+3. Go to folder kafka-topic-creator, and edit topic.yaml based on your usage.
+4. Run __main__.py
 
 ### Docker Build Executor and Client
 ```

@@ -18,8 +18,7 @@ CSV_DIR = "executor-logs"
 weights_path = './yolo-Weights/yolov8n.pt'
 
 class LocalExecutorStorage(Consumer, ConsumerStorage):
-    def __init__(self, consumer_topic: str, consumer_server: str, keep_messages=False, loop=None):
-        self.consumer_servers = consumer_server
+    def __init__(self, consumer_topic: str, keep_messages=False, loop=None):
         self.consumer_topic = consumer_topic
 
         Consumer.__init__(self, loop=loop)
@@ -87,8 +86,7 @@ class LocalExecutor(Producer):
 
 # ======================================================================
 class LocalExecutorProducer(LocalExecutor):
-    def __init__(self, consumer, producer_topic: str, producer_server: str):
-        self.producer_servers = producer_server
+    def __init__(self, consumer, producer_topic: str):
         self.producer_topic = producer_topic
         super().__init__(consumer)
 
@@ -112,10 +110,10 @@ async def main():
     total_uav = get_total_uav()
     for i in range(total_uav):    
         cons_topic = 'input_' + str(i+1)
-        host = 'localhost:9094'
+ 
         prod_topic = 'final_uav_' + str(i+1)
-        consumer = LocalExecutorStorage(cons_topic, host)
-        producer = LocalExecutorProducer(consumer, prod_topic, host)
+        consumer = LocalExecutorStorage(cons_topic)
+        producer = LocalExecutorProducer(consumer, prod_topic)
         tasks.append(consumer.run())
         tasks.append(producer.run())
     try:
