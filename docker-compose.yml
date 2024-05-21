@@ -1,18 +1,6 @@
 version: "2"
 
 services:  
-  datastream-processor:
-    build: ./datastream-processor/swarm
-    ports:
-      - "4000:80"
-    environment:
-      - PRODUCER_SERVERS=kafka-broker:9092
-      - CONSUMER_SERVERS=kafka-broker:9092
-      - PRODUCER_TOPIC=input
-    restart: always
-    networks:
-      - multiuavfogverse
-  
   client:
     build:
       context: ./client
@@ -36,6 +24,15 @@ services:
     restart: always
     networks:
       - multiuavfogverse
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
   
 networks:
   multiuavfogverse:

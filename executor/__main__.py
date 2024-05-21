@@ -112,7 +112,7 @@ async def main():
     total_uav = get_total_uav()
     for i in range(total_uav):    
         cons_topic = 'input_' + str(i+1)
-        host = 'localhost'
+        host = 'localhost:9094'
         prod_topic = 'final_uav_' + str(i+1)
         consumer = LocalExecutorStorage(cons_topic, host)
         producer = LocalExecutorProducer(consumer, prod_topic, host)

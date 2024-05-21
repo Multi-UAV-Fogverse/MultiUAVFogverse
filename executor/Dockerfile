@@ -1,5 +1,5 @@
-# Use PyTorch image with CUDA 12.1 support
-FROM pytorch/pytorch:latest
+# Use Python 3.9 slim image
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
 
 # Set the working directory in the container
 WORKDIR /app
@@ -18,6 +18,12 @@ COPY requirements.txt /app/
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the check_cuda.py script into the container
+COPY check_cuda.py /app/
+
+# Run the CUDA check script
+RUN python check_cuda.py
 
 # Clone the FogVerse submodule
 RUN git clone --recurse-submodules https://github.com/fogverse/fogverse.git /app/fogverse

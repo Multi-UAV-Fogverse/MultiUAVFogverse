@@ -45,10 +45,11 @@ class WebcamFrameProducerStorage(WebcamFrameConsumer, ConsumerStorage):
     return data
 
 class WebcamFrameProducer(Producer):
-  def __init__(self, consumer, uav_id: str, producer_topic: str, loop=None):
+  def __init__(self, consumer, uav_id: str, producer_topic: str, producer_server: str, loop=None):
     self.consumer = consumer
     self.uav_id = uav_id
     self.producer_topic = producer_topic
+    self.producer_servers = producer_server
 
     self._frame_id = 1
 
@@ -77,8 +78,9 @@ class WebcamFrameProducer(Producer):
   
 
 class CommandConsumer(Consumer):
-    def __init__(self, consumer_topic: str, loop=None):
+    def __init__(self, consumer_topic: str, consumer_server: str, loop=None):
       self.consumer_topic = consumer_topic
+      self.consumer_servers = consumer_server
 
       Consumer.__init__(self)
 
@@ -107,11 +109,12 @@ def take_off_uavs(is_takeoff: str):
 async def main():
     vid = cv2.VideoCapture(0) 
     tasks = []
+    server = "localhost:9094"
 
     consumer = WebcamFrameProducerStorage()
     setattr(consumer, 'consumer', vid)
-    producer = WebcamFrameProducer(consumer=consumer, uav_id="uav_1", producer_topic="input_1")
-    command = CommandConsumer("uav_command")
+    producer = WebcamFrameProducer(consumer=consumer, uav_id="uav_1", producer_topic="input_1", producer_server=server)
+    command = CommandConsumer("uav_command", server)
     tasks.append(command.run())
     tasks.append(consumer.run())
     tasks.append(producer.run())

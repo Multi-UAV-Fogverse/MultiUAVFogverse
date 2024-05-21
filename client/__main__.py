@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import asyncio
 import threading
 import yaml
@@ -14,7 +17,7 @@ def page_not_found(*args):
 
 app = Flask(__name__)
 app.register_error_handler(404, page_not_found)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
 loop = None
 storage = None
 

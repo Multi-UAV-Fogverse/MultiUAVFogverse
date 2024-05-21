@@ -112,7 +112,7 @@ def take_off_uavs(is_takeoff: str):
 def setup():
     # uncomment this if not running on docker or you want fast startup
     # listIp = network_scan.list_ip()
-    listIp = ['192.168.0.101']
+    listIp = ['192.168.0.101', '192.168.0.103']
     telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
@@ -146,6 +146,7 @@ def set_total_uav(total: int):
 async def main():
     global uavs
     uavs = setup()
+    host = "localhost:9094"
 
     tasks = []
     for index, tello in enumerate(uavs):
@@ -154,11 +155,11 @@ async def main():
 
         consumer = UAVFrameProducerStorage()
         setattr(consumer, 'consumer', tello)
-        producer = UAVFrameProducer(consumer=consumer, uav_id=uav_id, producer_topic=prod_topic, producer_server='localhost')
+        producer = UAVFrameProducer(consumer=consumer, uav_id=uav_id, producer_topic=prod_topic, producer_server=host)
         tasks.append(consumer.run())
         tasks.append(producer.run())
     
-    command = CommandConsumer("uav_command", "localhost")
+    command = CommandConsumer("uav_command", host)
     tasks.append(command.run())
     try:
         await asyncio.gather(*tasks)

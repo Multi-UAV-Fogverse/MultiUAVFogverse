@@ -7,3 +7,4 @@ confluent-kafka==2.3.0
 PyYAML==6.0.1
 who_is_on_my_wifi
 confluent-kafka
+python-dotenv

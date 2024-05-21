@@ -1,5 +1,5 @@
 server:
-  local_kafka: localhost:9092
+  local_kafka: localhost:9094
 
 topic:
   input_1:
