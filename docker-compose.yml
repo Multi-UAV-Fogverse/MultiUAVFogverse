@@ -12,6 +12,8 @@ services:
     restart: always
     networks:
       - multiuavfogverse
+    volumes:
+      - "uav_data:/logs"
     deploy:
       resources:
         limits:
@@ -41,7 +43,11 @@ services:
               capabilities: [gpu]
     stdin_open: true
     tty: true
-  
+
+volumes:
+  uav_data:
+    driver: local
+
 networks:
   multiuavfogverse:
     external: true

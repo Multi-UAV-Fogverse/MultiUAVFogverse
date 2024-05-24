@@ -10,7 +10,10 @@ from PIL import Image
 from io import BytesIO
 import numpy as np
 import logging
-
+import os
+import psutil
+import threading
+import time, logging
 
 # Set the logging level to ERROR to suppress info and debug logs
 logging.getLogger('ultralytics').setLevel(logging.ERROR)
@@ -27,6 +30,10 @@ class LocalExecutorStorage(Consumer, ConsumerStorage):
 class LocalExecutor(Producer):
     def __init__(self, consumer, loop=None):
         self.consumer = consumer
+        self.cpu_usage = 0
+        self.memory_usage = 0
+        self.gpu_memory_reserved = 0
+        self.gpu_memory_allocated = 0
         
         Producer.__init__(self, loop=loop)
 
@@ -93,6 +100,11 @@ class LocalExecutorProducer(LocalExecutor):
     async def send(self, data):
         headers = list(self.message.headers)
         headers.append(('executor_timestamp', get_timestamp_str().encode()))
+        headers.append(("executor_cpu_usage", str(self.cpu_usage).encode()))
+        headers.append(("executor_memory_usage", str(self.memory_usage).encode()))
+        headers.append(("executor_gpu_memory_reserved", str(self.gpu_memory_reserved).encode()))
+        headers.append(("executor_gpu_memory_allocated", str(self.gpu_memory_allocated).encode()))
+
         self.message.headers = headers
         await super().send(data)
 
@@ -105,6 +117,20 @@ def get_total_uav():
     # Access the data
     return data['DRONE_TOTAL']
 
+def monitor_resources(interval=1, producer=None):
+    process = psutil.Process(os.getpid())
+
+    while True:
+        cpu_usage = process.cpu_percent(interval=interval) / psutil.cpu_count()
+        if cpu_usage > 0:
+          producer.cpu_usage = cpu_usage
+        producer.memory_usage = process.memory_info().rss / 1024 / 1024  # Convert to MB
+        if torch.cuda.is_available():
+            producer.gpu_memory_reserved = torch.cuda.memory_reserved(0) / 1024 / 1024  # Convert to MB
+            producer.gpu_memory_allocated = torch.cuda.memory_allocated(0) / 1024 / 1024  # Convert to MB
+
+        time.sleep(interval)
+
 async def main():
     tasks = []
     total_uav = get_total_uav()
@@ -116,6 +142,10 @@ async def main():
         producer = LocalExecutorProducer(consumer, prod_topic)
         tasks.append(consumer.run())
         tasks.append(producer.run())
+
+        # Start resource monitoring in a separate thread
+        monitor_thread = threading.Thread(target=monitor_resources, daemon=True, args=[1, producer])
+        monitor_thread.start()
     try:
         await asyncio.gather(*tasks)
     finally:

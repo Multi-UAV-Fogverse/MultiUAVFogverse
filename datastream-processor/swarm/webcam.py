@@ -1,5 +1,5 @@
-import logging
-import time
+import os
+import psutil
 from uuid import uuid4
 import cv2
 from threading import Thread, Event
@@ -7,6 +7,8 @@ import asyncio
 from fogverse import Producer, AbstractConsumer, ConsumerStorage, Consumer
 from fogverse.fogverse_logging import FogVerseLogging
 from fogverse.util import get_timestamp_str
+import threading
+import time, logging
 
 
 from io import BytesIO
@@ -52,6 +54,8 @@ class WebcamFrameProducer(Producer):
     self.producer_servers = producer_server
 
     self._frame_id = 1
+    self.cpu_usage = 0
+    self.memory_usage = 0
 
     Producer.__init__(self, loop=loop)
 
@@ -71,7 +75,9 @@ class WebcamFrameProducer(Producer):
     self._headers = [
       ("uav_id", self.uav_id.encode()),
       ("frame_id", str(self._frame_id).encode()),
-      ("created_timestamp", get_timestamp_str().encode())
+      ("input_timestamp", get_timestamp_str().encode()),
+      ("input_cpu_usage", str(self.cpu_usage).encode()),
+      ("input_memory_usage", str(self.memory_usage).encode())
       ]
     self._frame_id += 1
     return await super().send(data, topic, key, self._headers, callback)
@@ -106,6 +112,16 @@ def take_off_uavs(is_takeoff: str):
   else:
     print("uavs land")
 
+def monitor_resources(interval=1, producer=None):
+    process = psutil.Process(os.getpid())
+
+    while True:
+        cpu_usage = process.cpu_percent(interval=interval) / psutil.cpu_count()
+        if cpu_usage > 0:
+          producer.cpu_usage = cpu_usage
+        producer.memory_usage = process.memory_info().rss / 1024 / 1024  # Convert to MB
+        time.sleep(interval)
+
 async def main():
     vid = cv2.VideoCapture(0) 
     tasks = []
@@ -118,6 +134,11 @@ async def main():
     tasks.append(command.run())
     tasks.append(consumer.run())
     tasks.append(producer.run())
+
+
+    # Start resource monitoring in a separate thread
+    monitor_thread = threading.Thread(target=monitor_resources, daemon=True, args=[1, producer])
+    monitor_thread.start()
     try:
         await asyncio.gather(*tasks)
     finally:

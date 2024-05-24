@@ -3,6 +3,7 @@ eventlet.monkey_patch()
 
 import asyncio
 import threading
+import time, logging
 import yaml
 import logging
 from fogverse import Consumer, Producer, ConsumerStorage
@@ -10,6 +11,8 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from fogverse.fogverse_logging import FogVerseLogging
 from fogverse.util import get_timestamp, get_timestamp_str, timestamp_to_datetime
+import psutil
+import os
 
 
 def page_not_found(*args):
@@ -26,8 +29,16 @@ class Client(Consumer):
         self.socket = socket
         self.auto_encode = False
         self.consumer_topic = consumer_topic
+        self.cpu_usage = 0
+        self.memory_usage = 0
 
-        self._headers = ["uav_id", "frame_id", "created_timestamp", "executor_timestamp", "client_timestamp", "latency"]
+        self._headers = [
+            "uav_id", "frame_id", 
+            "input_timestamp", "input_cpu_usage", "input_memory_usage", 
+            "executor_timestamp", "executor_cpu_usage", "executor_memory_usage", "executor_gpu_memory_reserved", "executor_gpu_memory_allocated", 
+            "client_timestamp", "client_cpu_usage", "client_memory_usage",
+            "latency"
+            ]
         self._fogverse_logger = FogVerseLogging(
             name=f'{self.consumer_topic}_scenario_2_cuda',
             dirname="uav-logs",
@@ -48,14 +59,14 @@ class Client(Consumer):
 
         # Logging
         client_timestamp = get_timestamp()
-        created_timestamp = timestamp_to_datetime(headers['created_timestamp'])
-        latency = client_timestamp - created_timestamp
+        input_timestamp = timestamp_to_datetime(headers['input_timestamp'])
+        latency = client_timestamp - input_timestamp
         frame_log = [
             headers['uav_id'], 
             headers['frame_id'], 
-            headers['created_timestamp'], 
-            headers['executor_timestamp'],
-            get_timestamp_str(date=client_timestamp),
+            headers['input_timestamp'], headers['input_cpu_usage'], headers['input_memory_usage'],
+            headers['executor_timestamp'], headers['executor_cpu_usage'], headers['executor_memory_usage'], headers['executor_gpu_memory_reserved'], headers['executor_gpu_memory_allocated'],
+            get_timestamp_str(date=client_timestamp), str(self.cpu_usage), str(self.memory_usage), 
             latency
             ]
         self._fogverse_logger.csv_log(frame_log)
@@ -112,6 +123,16 @@ def control_center():
         listUavName.append("uav_"+str(i+1))
     return render_template('control_center.html', uav_list=listUavName)
 
+def monitor_resources(interval=1, consumer=None):
+    process = psutil.Process(os.getpid())
+
+    while True:
+        cpu_usage = process.cpu_percent(interval=interval) / psutil.cpu_count()
+        if cpu_usage > 0:
+          consumer.cpu_usage = cpu_usage
+        consumer.memory_usage = process.memory_info().rss / 1024 / 1024  # Convert to MB
+        time.sleep(interval)
+
 async def main(loop):
     global storage
     tasks = []
@@ -121,6 +142,9 @@ async def main(loop):
         cons_topic = 'final_uav_' + str(i+1)
         consumer = Client(socket=socketio, consumer_topic=cons_topic, loop=loop)
         tasks.append(consumer.run())
+        # Start resource monitoring in a separate thread
+        monitor_thread = threading.Thread(target=monitor_resources, daemon=True, args=[1, consumer])
+        monitor_thread.start()
     storage = MyCommandStorage(loop=loop)
     command = Command(storage, "uav_command", loop=loop)
     tasks.append(command.run())    
