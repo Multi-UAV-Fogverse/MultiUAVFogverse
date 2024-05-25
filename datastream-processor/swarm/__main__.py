@@ -1,6 +1,7 @@
 from djitellopy import Tello, TelloSwarm
 import cv2
 from threading import Thread
+import threading
 import logging
 import asyncio
 from fogverse import Producer, Consumer, AbstractConsumer, ConsumerStorage
@@ -10,6 +11,7 @@ from io import BytesIO
 from PIL import Image
 import os
 import psutil
+import time
 
 CSV_DIR = "input-logs"
 
@@ -59,6 +61,10 @@ class UAVFrameProducer(Producer):
     self.producer_topic = producer_topic
     self.producer_servers = producer_server
 
+    self._frame_id = 1
+    self.cpu_usage = 0
+    self.memory_usage = 0
+
     Producer.__init__(self, loop=loop)
 
     self._frame_id = 1
@@ -77,7 +83,9 @@ class UAVFrameProducer(Producer):
     self._headers = [
       ("uav_id", self.uav_id.encode()),
       ("frame_id", str(self._frame_id).encode()),
-      ("created_timestamp", get_timestamp_str().encode())
+      ("input_timestamp", get_timestamp_str().encode()),
+      ("input_cpu_usage", str(self.cpu_usage).encode()),
+      ("input_memory_usage", str(self.memory_usage).encode())
       ]
     self._frame_id += 1
     return await super().send(data, topic, key, self._headers, callback)
@@ -114,7 +122,7 @@ def take_off_uavs(is_takeoff: str):
 def setup():
     # uncomment this if not running on docker or you want fast startup
     # listIp = network_scan.list_ip()
-    listIp = ['192.168.0.101', '192.168.0.103']
+    listIp = ['192.168.0.102', '192.168.0.103']
     telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
@@ -134,6 +142,16 @@ def setup():
     set_total_uav(len(telloSwarm))
 
     return telloSwarm
+
+def monitor_resources(interval=1, producer=None):
+    process = psutil.Process(os.getpid())
+
+    while True:
+        cpu_usage = process.cpu_percent(interval=interval) / psutil.cpu_count()
+        if cpu_usage > 0:
+          producer.cpu_usage = cpu_usage
+        producer.memory_usage = process.memory_info().rss / 1024 / 1024  # Convert to MB
+        time.sleep(interval)
 
 def set_total_uav(total: int):
     # Open the YAML file
@@ -160,6 +178,10 @@ async def main():
         producer = UAVFrameProducer(consumer=consumer, uav_id=uav_id, producer_topic=prod_topic, producer_server=host)
         tasks.append(consumer.run())
         tasks.append(producer.run())
+
+        # Start resource monitoring in a separate thread
+        monitor_thread = threading.Thread(target=monitor_resources, daemon=True, args=[1, producer])
+        monitor_thread.start()
     
     command = CommandConsumer("uav_command", host)
     tasks.append(command.run())

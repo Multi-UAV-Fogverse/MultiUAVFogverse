@@ -33,10 +33,14 @@ class Client(Consumer):
         self.memory_usage = 0
 
         self._headers = [
-            "uav_id", "frame_id", 
-            "input_timestamp", "input_cpu_usage", "input_memory_usage", 
-            "executor_timestamp", "executor_cpu_usage", "executor_memory_usage", "executor_gpu_memory_reserved", "executor_gpu_memory_allocated", 
-            "client_timestamp", "client_cpu_usage", "client_memory_usage",
+            "uav_id", 
+            "frame_id", 
+            "cpu_usage", 
+            "memory_usage", 
+            "gpu_memory_reserved", 
+            "gpu_memory_allocated", 
+            "input_timestamp", 
+            "client_timestamp", 
             "latency"
             ]
         self._fogverse_logger = FogVerseLogging(
@@ -61,12 +65,17 @@ class Client(Consumer):
         client_timestamp = get_timestamp()
         input_timestamp = timestamp_to_datetime(headers['input_timestamp'])
         latency = client_timestamp - input_timestamp
+        cpu_usage = float(headers['input_cpu_usage']) + float(headers['executor_cpu_usage']) + float(self.cpu_usage)
+        memory_usage = float(headers['input_memory_usage']) + float(headers['executor_memory_usage']) + float(self.memory_usage)
         frame_log = [
             headers['uav_id'], 
-            headers['frame_id'], 
-            headers['input_timestamp'], headers['input_cpu_usage'], headers['input_memory_usage'],
-            headers['executor_timestamp'], headers['executor_cpu_usage'], headers['executor_memory_usage'], headers['executor_gpu_memory_reserved'], headers['executor_gpu_memory_allocated'],
-            get_timestamp_str(date=client_timestamp), str(self.cpu_usage), str(self.memory_usage), 
+            headers['frame_id'],
+            cpu_usage, 
+            memory_usage, 
+            headers["executor_gpu_memory_reserved"],
+            headers["executor_gpu_memory_allocated"],
+            headers['input_timestamp'],
+            get_timestamp_str(date=client_timestamp),
             latency
             ]
         self._fogverse_logger.csv_log(frame_log)
@@ -91,17 +100,8 @@ class Command(Producer):
     async def receive(self):
         return await self.consumer.get()
 
-    def _after_send(self, data):
-        print('masuk after send')
-        print(data)
-        print(self.producer_servers)
-        print(self._topic)
-
     def callback(record, *args, **kwargs):
-        print('masuk callback, ini callback jalan kalau send nya berhasil')
-        print(f'record: {record}')
-        print(f'args: {args}')
-        print(f'kwargs: {kwargs}')
+        print('Success sending command')
         return record
 
 @socketio.on("take_off")

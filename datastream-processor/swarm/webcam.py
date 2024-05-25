@@ -8,7 +8,7 @@ from fogverse import Producer, AbstractConsumer, ConsumerStorage, Consumer
 from fogverse.fogverse_logging import FogVerseLogging
 from fogverse.util import get_timestamp_str
 import threading
-import time, logging
+import time
 
 
 from io import BytesIO
