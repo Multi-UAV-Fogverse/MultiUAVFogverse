@@ -71,19 +71,9 @@
     ></script>
     <script type="text/javascript" charset="utf-8">
       const imgFeed = $("#img-feed");
-      const uavVal = $("tr#uav td:nth-child(2)");
-      const frameVal = $("tr#frame td:nth-child(2)");
-      const fromVal = $("tr#from td:nth-child(2)");
-      const tsCreatedVal = $("tr#timestamp-created td:nth-child(2)");
-      const tsNowVal = $("tr#timestamp-now td:nth-child(2)");
-      const delayVal = $("tr#delay td:nth-child(2)");
-      const framerateVal = $("tr#framerate td:nth-child(2)");
       const uav_id = window.location.pathname.split("/").slice(1, -1)[0];
       const topic = `final_${uav_id}`;
 
-      var nFrame = 0;
-      var avgDelayFrame = 0;
-      var tsLastFrame = -1;
 
       const videoSocket = io.connect();
       videoSocket.on(topic, (msg) => {
@@ -91,37 +81,6 @@
         renderHeaders(msg.headers);
       });
 
-      const convertTZ = (date, tzString) => {
-        if (typeof date === "string") {
-          return new Date(date);
-        } else {
-          _date = date.toLocaleString("en-US", { timeZone: tzString });
-          return new Date(_date);
-        }
-      };
-
-      const renderHeaders = (headers) => {
-        if (tsLastFrame !== -1) {
-          const _delayFrame = new Date() - tsLastFrame;
-          avgDelayFrame = (avgDelayFrame * nFrame + _delayFrame) / ++nFrame;
-        }
-        tsLastFrame = new Date();
-
-        uavVal.text(headers.cam);
-        frameVal.text(headers.frame);
-        fromVal.text(headers.from);
-
-        const tsCreated = convertTZ(headers.timestamp);
-        const now = new Date();
-        tsCreatedVal.text(tsCreated.toISOString());
-        tsNowVal.text(now.toISOString());
-        const delay = Math.abs(now - tsCreated - 7 * 60 * 60 * 1000);
-        delayVal.text(`${delay} ms`);
-
-        var fps = 1000 / avgDelayFrame;
-        fps = Math.round(fps * 100) / 100;
-        framerateVal.text(`${fps} fps`);
-      };
     </script>
   </body>
 </html>

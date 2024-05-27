@@ -122,7 +122,7 @@ def take_off_uavs(is_takeoff: str):
 def setup():
     # uncomment this if not running on docker or you want fast startup
     # listIp = network_scan.list_ip()
-    listIp = ['192.168.0.102', '192.168.0.103']
+    listIp = ['192.168.0.101', '192.168.0.102', '192.168.0.103']
     telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):

@@ -22,6 +22,26 @@ topic:
       segment.bytes: 9300000
       segment.ms: 1200
   
+  input_3:
+    ### Just choose one "partitions" options. Don't forget to comment the other option.
+    partitions: 1 # for only_local ARCHITECTURE.
+    server:
+      - local_kafka
+    config:
+      retention.ms: 2000
+      segment.bytes: 9300000
+      segment.ms: 1200
+  
+  input_4:
+    ### Just choose one "partitions" options. Don't forget to comment the other option.
+    partitions: 1 # for only_local ARCHITECTURE.
+    server:
+      - local_kafka
+    config:
+      retention.ms: 2000
+      segment.bytes: 9300000
+      segment.ms: 1200
+  
   final_uav_1:
     partitions: 1
     server:
@@ -33,6 +53,24 @@ topic:
   
   # If using 2 UAV, uncomment this topic.
   final_uav_2:
+    partitions: 1
+    server:
+      - local_kafka
+    config:
+      retention.ms: 5000
+      segment.bytes: 10000000
+      segment.ms: 1200
+  
+  final_uav_3:
+    partitions: 1
+    server:
+      - local_kafka
+    config:
+      retention.ms: 5000
+      segment.bytes: 10000000
+      segment.ms: 1200
+  
+  final_uav_4:
     partitions: 1
     server:
       - local_kafka
