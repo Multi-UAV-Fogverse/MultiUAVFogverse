@@ -44,7 +44,7 @@ class Client(Consumer):
             "latency"
             ]
         self._fogverse_logger = FogVerseLogging(
-            name=f'{self.consumer_topic}_scenario_3',
+            name=f'{self.consumer_topic}_scenario_1',
             dirname="uav-logs",
             csv_header=self._headers,
             level= logging.INFO + 2

@@ -122,7 +122,7 @@ def take_off_uavs(is_takeoff: str):
 def setup():
     # uncomment this if not running on docker or you want fast startup
     # listIp = network_scan.list_ip()
-    listIp = ['192.168.0.101', '192.168.0.102', '192.168.0.103']
+    listIp = ['192.168.0.101']
     telloSwarm = TelloSwarm.fromIps(listIp)
 
     for index, tello in enumerate(telloSwarm.tellos):
@@ -152,16 +152,6 @@ def monitor_resources(interval=1, producer=None):
           producer.cpu_usage = cpu_usage
         producer.memory_usage = process.memory_info().rss / 1024 / 1024  # Convert to MB
         time.sleep(interval)
-
-def set_total_uav(total: int):
-    # Open the YAML file
-  yaml_data = "DRONE_TOTAL: " + str(total)
-  global_config = yaml.safe_load(yaml_data)
-
-  with open('global_config.yaml', 'w') as file:
-    yaml.dump(global_config, file)
-
-  print("Changing global config -> "+ open('global_config.yaml').read())
 
 async def main():
     global uavs
